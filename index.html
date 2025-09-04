@@ -426,6 +426,10 @@
 </head>
 <body>
 
+<div style="background-color: #FEF3C7; color: #92400E; padding: 15px; border-radius: 8px; border: 1px solid #FDBA74; margin-bottom: 20px;">
+    <strong>IMPORTANT:</strong> Si l'application ne fonctionne pas, il est probable que le problème vienne des règles de sécurité de votre base de données Firestore. Copiez les règles fournies dans la réponse pour résoudre ce problème.
+</div>
+    
 <div class="container">
     <div class="card">
         <h1>Budget Wizard ✨🧙‍♂️</h1>
@@ -670,6 +674,23 @@
         other: '📦',
     };
 
+    // Helper to get CSS variables for Chart.js
+    const getCssVar = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
+    // Color palette for charts
+    const CHART_COLORS = [
+        getCssVar('--primary-color'),
+        getCssVar('--income-color'),
+        getCssVar('--expense-color'),
+        getCssVar('--balance-color'),
+        '#F97316', // Orange
+        '#8B5CF6', // Purple
+        '#EC4899', // Pink
+        '#EAB308', // Yellow
+        '#6B7280', // Gray
+        '#3B82F6', // Blue
+    ];
+
     const $ = id => document.getElementById(id);
     const fmt = n => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     
@@ -803,16 +824,27 @@
         const hasData = Object.keys(expensesByCategory).length > 0;
         if (CHART) CHART.destroy();
         if (!hasData) {
+            const parent = ctx.canvas.parentElement;
+            parent.style.height = 'auto'; // Revert to auto height
+            parent.innerHTML = '<p style="text-align:center;color:var(--light-text-color);padding-top: 50px;">Aucune donnée de dépenses pour ce graphique.</p>';
             return;
+        } else {
+             const parent = ctx.canvas.parentElement;
+             parent.style.height = '250px'; // Re-apply height
         }
+
+
+        const categoryLabels = Object.keys(expensesByCategory);
+        const categoryData = Object.values(expensesByCategory);
+        const colors = categoryLabels.map((label, i) => CHART_COLORS[i % CHART_COLORS.length]);
 
         CHART = new Chart(ctx, {
             type: 'doughnut',
             data: {
-                labels: Object.keys(expensesByCategory),
+                labels: categoryLabels,
                 datasets: [{
-                    data: Object.values(expensesByCategory),
-                    backgroundColor: ['#4F46E5', '#8B5CF6', '#EC4899', '#F59E0B', '#10B981', '#EF4444', '#0EA5E9', '#EAB308'],
+                    data: categoryData,
+                    backgroundColor: colors,
                     hoverOffset: 8
                 }]
             },
@@ -821,7 +853,7 @@
                 maintainAspectRatio: false,
                 cutout: '70%',
                 plugins: {
-                    legend: { position: 'right', labels: { font: { size: 12 }, color: 'var(--text-color)', usePointStyle: true } },
+                    legend: { position: 'right', labels: { font: { size: 12 }, color: getCssVar('--text-color'), usePointStyle: true } },
                     tooltip: { callbacks: { label: c => c.label + ': $' + fmt(c.parsed) } }
                 }
             }
@@ -845,8 +877,20 @@
             acc.push((acc[i - 1] || 0) + (monthlyData[month].income - monthlyData[month].expense));
             return acc;
         }, []);
-
+        
+        const hasData = sortedMonths.length > 0;
         if (CHART) CHART.destroy();
+        if (!hasData) {
+            const parent = ctx.canvas.parentElement;
+            parent.style.height = 'auto';
+            parent.innerHTML = '<p style="text-align:center;color:var(--light-text-color);padding-top: 50px;">Aucune donnée de solde pour ce graphique.</p>';
+            return;
+        } else {
+             const parent = ctx.canvas.parentElement;
+             parent.style.height = '250px';
+        }
+
+
         CHART = new Chart(ctx, {
             type: 'line',
             data: {
@@ -854,7 +898,7 @@
                 datasets: [{
                     label: 'Cumulative Balance',
                     data: cumulativeBalance,
-                    borderColor: 'var(--balance-color)',
+                    borderColor: getCssVar('--balance-color'),
                     backgroundColor: 'rgba(14, 165, 233, 0.2)',
                     fill: true,
                     tension: 0.2,
@@ -866,8 +910,8 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 scales: {
-                    x: { ticks: { color: 'var(--light-text-color)' } },
-                    y: { beginAtZero: false, ticks: { color: 'var(--light-text-color)' } }
+                    x: { ticks: { color: getCssVar('--light-text-color') } },
+                    y: { beginAtZero: false, ticks: { color: getCssVar('--light-text-color') } }
                 }
             }
         });
@@ -888,31 +932,55 @@
         const sortedMonths = Object.keys(monthlyData).sort();
         const incomes = sortedMonths.map(m => monthlyData[m].income);
         const expenses = sortedMonths.map(m => monthlyData[m].expense);
-
+        
+        const hasData = sortedMonths.length > 0;
         if (CHART) CHART.destroy();
+        if (!hasData) {
+            const parent = ctx.canvas.parentElement;
+            parent.style.height = 'auto';
+            parent.innerHTML = '<p style="text-align:center;color:var(--light-text-color);padding-top: 50px;">Aucune donnée de revenus/dépenses pour ce graphique.</p>';
+            return;
+        } else {
+             const parent = ctx.canvas.parentElement;
+             parent.style.height = '250px';
+        }
+
         CHART = new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: sortedMonths,
                 datasets: [
-                    { label: 'Income', data: incomes, backgroundColor: 'var(--income-color)' },
-                    { label: 'Expenses', data: expenses, backgroundColor: 'var(--expense-color)' }
+                    { label: 'Income', data: incomes, backgroundColor: getCssVar('--income-color') },
+                    { label: 'Expenses', data: expenses, backgroundColor: getCssVar('--expense-color') }
                 ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 scales: {
-                    x: { stacked: true, ticks: { color: 'var(--light-text-color)' } },
-                    y: { stacked: true, beginAtZero: true, ticks: { color: 'var(--light-text-color)' } }
+                    x: { stacked: true, ticks: { color: getCssVar('--light-text-color') } },
+                    y: { stacked: true, beginAtZero: true, ticks: { color: getCssVar('--light-text-color') } }
                 }
             }
         });
     }
     
     function refreshChart() {
-        const ctx = $('chart').getContext('2d');
+        const canvas = $('chart');
+        const ctx = canvas.getContext('2d');
         const selectedChart = $('chartSelector').value;
+        const parent = canvas.parentElement;
+
+        if (CHART) {
+            CHART.destroy();
+            CHART = null; // Clear the chart instance
+        }
+        
+        // Restore the canvas if it was replaced by a message
+        if (parent.querySelector('p')) {
+            parent.innerHTML = '';
+            parent.appendChild(canvas);
+        }
 
         switch (selectedChart) {
             case 'expenses':
@@ -957,7 +1025,7 @@
     $('form').addEventListener('submit', async e => {
         e.preventDefault();
 
-        if (!$('desc').value || !$('mnt').value || !$('typ').value || !$('cur').value || !$('cat').value || !$('dat').value) {
+        if (!$('desc').value || !$('mnt').value || !$('typ').value || !('cur' in e.target.elements) || !$('cur').value || !$('cat').value || !$('dat').value) {
             showMessage("Veuillez remplir tous les champs.", false);
             return;
         }
@@ -984,20 +1052,18 @@
             const day = today.getDate().toString().padStart(2, '0');
             $('dat').value = `${year}-${month}-${day}`;
         } catch (e) {
-            console.error("Error adding document: ", e);
-            showMessage("Erreur lors de l'ajout de la transaction. Vérifiez les règles de sécurité Firestore.", false);
+                console.error("Error adding document: ", e);
+                showMessage("Erreur lors de l'ajout de la transaction. Vérifiez les règles de sécurité Firestore.", false);
         }
     });
 
     $('prev').onclick = () => {
         CUR_DATE.setMonth(CUR_DATE.getMonth() - 1);
-        refreshList();
-        buildCalendar(); 
+        refreshAll();
     };
     $('next').onclick = () => {
         CUR_DATE.setMonth(CUR_DATE.getMonth() + 1);
-        refreshList();
-        buildCalendar(); 
+        refreshAll();
     };
 
     $('delLast').onclick = async () => {
