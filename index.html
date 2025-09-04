@@ -477,7 +477,7 @@
 <script>
     /* ---------- CONFIGURATION AND UTILS ---------- */
     const EUR2USD = 1.08; 
-    let DATA = JSON.parse(localStorage.getItem('budgetData')) || []; // Changed key to budgetData
+    let DATA = JSON.parse(localStorage.getItem('budgetData')) || [];
     let CUR_DATE = new Date();
     let CHART;
 
@@ -659,10 +659,12 @@
     // Main function to update all UI components
     function refreshAll() {
         try {
+            console.log("Refreshing all components...");
             refreshTotals();
             buildCalendar();
             refreshList();
             refreshChart();
+            console.log("Refresh completed.");
         } catch (e) {
             console.error("Critical error during page refresh:", e);
         }
@@ -673,7 +675,7 @@
     $('form').addEventListener('submit', e => {
         e.preventDefault();
 
-        // Validate form fields
+        // Check if all required fields are filled
         if (!$('desc').value || !$('mnt').value || !$('typ').value || !$('cur').value || !$('cat').value || !$('dat').value) {
             alert("Please fill in all fields.");
             return;
@@ -694,7 +696,7 @@
 
         DATA.push(newTransaction);
         save();
-        refreshAll(); // Ensure all components are refreshed after a successful transaction
+        refreshAll();
         e.target.reset();
         $('dat').valueAsDate = new Date();
     });
@@ -766,7 +768,6 @@
 
     // Initial page load
     document.addEventListener('DOMContentLoaded', refreshAll);
-    refreshAll();
 </script>
 </body>
 </html>
