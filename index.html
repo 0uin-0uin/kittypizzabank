@@ -495,6 +495,7 @@
     /* ---------- CORE REFRESH FUNCTIONS ---------- */
     // Updates the summary totals (Income, Expense, Balance)
     function refreshTotals() {
+        console.log("refreshTotals called.");
         try {
             const inc = DATA.filter(t => t.type === 'income').reduce((s, t) => s + t.usd, 0);
             const exp = DATA.filter(t => t.type === 'expense').reduce((s, t) => s + t.usd, 0);
@@ -508,6 +509,7 @@
 
     // Builds and displays the calendar with transaction dots
     function buildCalendar() {
+        console.log("buildCalendar called.");
         try {
             const y = CUR_DATE.getFullYear(), m = CUR_DATE.getMonth();
             $('mois').textContent = new Date(y, m).toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
@@ -537,7 +539,7 @@
 
                 const dayTransactions = DATA.filter(t => {
                     const transactionDate = new Date(t.date);
-                    return transactionDate.toDateString() === day.toDateString();
+                    return transactionDate.getFullYear() === day.getFullYear() && transactionDate.getMonth() === day.getMonth() && transactionDate.getDate() === day.getDate();
                 });
                 
                 if (dayTransactions.length) {
@@ -553,7 +555,10 @@
                 }
 
                 dayDiv.addEventListener('click', () => {
-                    $('dat').valueAsDate = day;
+                    const year = day.getFullYear();
+                    const month = (day.getMonth() + 1).toString().padStart(2, '0');
+                    const dayOfMonth = day.getDate().toString().padStart(2, '0');
+                    $('dat').value = `${year}-${month}-${dayOfMonth}`;
                 });
                 $('cal').appendChild(dayDiv);
             }
@@ -564,6 +569,7 @@
 
     // Populates the list of recent transactions
     function refreshList() {
+        console.log("refreshList called.");
         try {
             const y = CUR_DATE.getFullYear(), m = CUR_DATE.getMonth();
             const monthTransactions = DATA.filter(t => {
@@ -601,6 +607,7 @@
 
     // Renders the doughnut chart of expenses
     function refreshChart() {
+        console.log("refreshChart called.");
         try {
             const ctx = $('chart').getContext('2d');
             if (CHART) CHART.destroy();
@@ -613,6 +620,7 @@
             const hasData = Object.keys(expensesByCategory).length > 0;
 
             if (!hasData) {
+                // Clear canvas if no data
                 ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
                 return;
             }
@@ -660,8 +668,8 @@
 
     // Main function to update all UI components
     function refreshAll() {
+        console.log("Refreshing all components...");
         try {
-            console.log("Refreshing all components...");
             refreshTotals();
             buildCalendar();
             refreshList();
