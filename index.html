@@ -457,7 +457,14 @@
             <div id="list" class="transaction-list"></div>
         </div>
         <div class="card">
-            <h2>Expense Breakdown</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2>📊 Financial Overview</h2>
+                <select id="chartSelector" aria-label="Select chart type">
+                    <option value="expenses">Expenses by Category</option>
+                    <option value="monthlyBalance">Monthly Balance</option>
+                    <option value="incomeVsExpense">Income vs. Expense</option>
+                </select>
+            </div>
             <div class="chart-container">
                 <canvas id="chart" role="img" aria-label="Doughnut chart showing expense categories"></canvas>
             </div>
@@ -470,6 +477,8 @@
             <button id="delLast" aria-label="Delete last transaction">Delete Last</button>
             <button id="delMonth" aria-label="Delete all transactions for the current month">Delete Month</button>
             <button id="reset" aria-label="Reset all budget data">Reset All</button>
+            <button id="exportData" aria-label="Export budget data">Export Data</button>
+            <button id="importData" aria-label="Import budget data">Import Data</button>
         </div>
     </div>
 </div>
@@ -501,7 +510,6 @@
     };
     const fmt = n => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     
-    // Helper function to create a date object from YYYY-MM-DD string without timezone issues
     const createUTCDate = dateStr => {
       const [year, month, day] = dateStr.split('-').map(Number);
       return new Date(Date.UTC(year, month - 1, day));
@@ -594,7 +602,7 @@
             }
 
             monthTransactions.forEach(t => {
-                const transactionDate = new Date(t.date); // Use a new Date object to fix timezone offset on display
+                const transactionDate = new Date(t.date);
                 const emoji = EMOJI_MAP[t.cat] || '❓';
                 const div = document.createElement('div');
                 div.className = 'list-item';
@@ -616,59 +624,139 @@
         }
     }
 
+    function renderExpensesChart(ctx) {
+        const expensesByCategory = DATA.filter(t => t.type === 'expense').reduce((acc, t) => {
+            acc[t.cat] = (acc[t.cat] || 0) + t.usd;
+            return acc;
+        }, {});
+
+        const hasData = Object.keys(expensesByCategory).length > 0;
+        if (!hasData) {
+            ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+            return;
+        }
+
+        CHART = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(expensesByCategory),
+                datasets: [{
+                    data: Object.values(expensesByCategory),
+                    backgroundColor: ['#4F46E5', '#8B5CF6', '#EC4899', '#F59E0B', '#10B981', '#EF4444', '#0EA5E9', '#EAB308'],
+                    hoverOffset: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '70%',
+                plugins: {
+                    legend: { position: 'right', labels: { font: { size: 12 }, color: 'var(--text-color)', usePointStyle: true } },
+                    tooltip: { callbacks: { label: c => c.label + ': $' + fmt(c.parsed) } }
+                }
+            }
+        });
+    }
+
+    function renderMonthlyBalanceChart(ctx) {
+        const balanceData = {};
+        DATA.forEach(t => {
+            const date = createUTCDate(t.date);
+            const month = `${date.getUTCFullYear()}-${(date.getUTCMonth() + 1).toString().padStart(2, '0')}`;
+            if (!balanceData[month]) {
+                balanceData[month] = 0;
+            }
+            balanceData[month] += (t.type === 'income' ? t.usd : -t.usd);
+        });
+
+        const sortedMonths = Object.keys(balanceData).sort();
+        const cumulativeBalance = sortedMonths.reduce((acc, month, i) => {
+            acc.push((acc[i - 1] || 0) + balanceData[month]);
+            return acc;
+        }, []);
+
+        CHART = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: sortedMonths,
+                datasets: [{
+                    label: 'Cumulative Balance',
+                    data: cumulativeBalance,
+                    borderColor: 'var(--balance-color)',
+                    backgroundColor: 'rgba(14, 165, 233, 0.2)',
+                    fill: true,
+                    tension: 0.2,
+                    pointRadius: 5,
+                    pointHoverRadius: 7
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { ticks: { color: 'var(--light-text-color)' } },
+                    y: { beginAtZero: false, ticks: { color: 'var(--light-text-color)' } }
+                }
+            }
+        });
+    }
+
+    function renderIncomeVsExpenseChart(ctx) {
+        const monthlyData = {};
+        DATA.forEach(t => {
+            const date = createUTCDate(t.date);
+            const month = `${date.getUTCFullYear()}-${(date.getUTCMonth() + 1).toString().padStart(2, '0')}`;
+            if (!monthlyData[month]) {
+                monthlyData[month] = { income: 0, expense: 0 };
+            }
+            monthlyData[month][t.type] += t.usd;
+        });
+
+        const sortedMonths = Object.keys(monthlyData).sort();
+        const incomes = sortedMonths.map(m => monthlyData[m].income);
+        const expenses = sortedMonths.map(m => monthlyData[m].expense);
+
+        CHART = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: sortedMonths,
+                datasets: [
+                    { label: 'Income', data: incomes, backgroundColor: 'var(--income-color)' },
+                    { label: 'Expenses', data: expenses, backgroundColor: 'var(--expense-color)' }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { stacked: true, ticks: { color: 'var(--light-text-color)' } },
+                    y: { stacked: true, beginAtZero: true, ticks: { color: 'var(--light-text-color)' } }
+                }
+            }
+        });
+    }
+
     function refreshChart() {
         try {
             const ctx = $('chart').getContext('2d');
             if (CHART) CHART.destroy();
 
-            const expensesByCategory = DATA.filter(t => t.type === 'expense').reduce((acc, t) => {
-                acc[t.cat] = (acc[t.cat] || 0) + t.usd;
-                return acc;
-            }, {});
+            const chartType = $('chartSelector').value;
 
-            const hasData = Object.keys(expensesByCategory).length > 0;
-
-            if (!hasData) {
-                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-                return;
+            switch (chartType) {
+                case 'expenses':
+                    renderExpensesChart(ctx);
+                    break;
+                case 'monthlyBalance':
+                    renderMonthlyBalanceChart(ctx);
+                    break;
+                case 'incomeVsExpense':
+                    renderIncomeVsExpenseChart(ctx);
+                    break;
+                default:
+                    renderExpensesChart(ctx);
+                    break;
             }
-
-            CHART = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: Object.keys(expensesByCategory),
-                    datasets: [{
-                        data: Object.values(expensesByCategory),
-                        backgroundColor: ['#4F46E5', '#8B5CF6', '#EC4899', '#F59E0B', '#10B981', '#EF4444', '#0EA5E9', '#EAB308'],
-                        hoverOffset: 8
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: '70%',
-                    plugins: {
-                        legend: {
-                            position: 'right',
-                            labels: {
-                                font: { size: 12, family: 'Inter' },
-                                color: 'var(--text-color)',
-                                usePointStyle: true,
-                            },
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    let label = context.label || '';
-                                    if (label) { label += ': '; }
-                                    if (context.parsed !== null) { label += '$' + fmt(context.parsed); }
-                                    return label;
-                                }
-                            }
-                        }
-                    }
-                }
-            });
         } catch (e) {
             console.error("Error refreshing chart:", e);
         }
@@ -683,6 +771,45 @@
         } catch (e) {
             console.error("Critical error during page refresh:", e);
         }
+    }
+
+    function exportData() {
+        const dataStr = JSON.stringify(DATA, null, 2);
+        const blob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'budget_data.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        alert("Budget data exported successfully!");
+    }
+
+    function importData(event) {
+        const file = event.target.files[0];
+        if (!file) {
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const importedData = JSON.parse(e.target.result);
+                if (Array.isArray(importedData)) {
+                    DATA = importedData;
+                    save();
+                    refreshAll();
+                    alert("Budget data imported successfully!");
+                } else {
+                    alert("Invalid file format. Please import a valid JSON array.");
+                }
+            } catch (error) {
+                alert("Error importing data: Invalid JSON file.");
+                console.error("Import error:", error);
+            }
+        };
+        reader.readAsText(file);
     }
 
     /* ---------- EVENT LISTENERS AND LOGIC ---------- */
@@ -777,6 +904,17 @@
             }
         }
     };
+    
+    $('exportData').onclick = exportData;
+    $('importData').onclick = () => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        input.onchange = importData;
+        input.click();
+    };
+    
+    $('chartSelector').addEventListener('change', refreshChart);
 
     document.addEventListener('DOMContentLoaded', () => {
       const today = new Date();
