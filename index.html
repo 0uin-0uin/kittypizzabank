@@ -540,7 +540,6 @@
 
                 const dayTransactions = DATA.filter(t => {
                     const transactionDate = createUTCDate(t.date);
-                    // Compare dates without time, using getUTCDate and getUTCMonth
                     return transactionDate.getUTCFullYear() === day.getFullYear() && transactionDate.getUTCMonth() === day.getMonth() && transactionDate.getUTCDate() === day.getDate();
                 });
                 
@@ -591,7 +590,7 @@
                 div.innerHTML = `
                     <div class="item-details">
                         <strong>${t.desc}</strong>
-                        <small>${t.cat} • ${transactionDate.toLocaleDateString('en-US')}</small>
+                        <small>${t.cat} • ${transactionDate.toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}</small>
                     </div>
                     <div class="amount-info">
                         <div class="value ${t.type}">${t.amt} ${t.cur}</div>
@@ -693,7 +692,7 @@
             cur: $('cur').value,
             type: $('typ').value,
             cat: $('cat').value,
-            date: $('dat').value, // Store date as YYYY-MM-DD string
+            date: $('dat').value,
             usd: usdAmount
         };
 
