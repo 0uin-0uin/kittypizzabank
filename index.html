@@ -829,20 +829,20 @@
     }
 
     function renderMonthlyBalanceChart(ctx) {
-        const balanceData = {};
+        const monthlyData = {};
         DATA.forEach(t => {
             const date = createUTCDate(t.date);
             if (!date) return;
             const month = `${date.getUTCFullYear()}-${(date.getUTCMonth() + 1).toString().padStart(2, '0')}`;
-            if (!balanceData[month]) {
-                balanceData[month] = 0;
+            if (!monthlyData[month]) {
+                monthlyData[month] = { income: 0, expense: 0 };
             }
-            balanceData[month] += (t.type === 'income' ? t.usd : -t.usd);
+            monthlyData[month][t.type] = (monthlyData[month][t.type] || 0) + t.usd;
         });
 
-        const sortedMonths = Object.keys(balanceData).sort();
+        const sortedMonths = Object.keys(monthlyData).sort();
         const cumulativeBalance = sortedMonths.reduce((acc, month, i) => {
-            acc.push((acc[i - 1] || 0) + balanceData[month]);
+            acc.push((acc[i - 1] || 0) + (monthlyData[month].income - monthlyData[month].expense));
             return acc;
         }, []);
 
@@ -1033,6 +1033,7 @@
         const confirmed = await showMessage(`Supprimer les ${transactionsToDelete.length} transaction(s) de ce mois ?`, true);
         if (confirmed) {
             try {
+                const querySnapshot = await getDocs(transactionsCollection);
                 const batch = writeBatch(db);
                 transactionsToDelete.forEach((d) => {
                     batch.delete(doc(db, transactionsCollection.path, d.id));
