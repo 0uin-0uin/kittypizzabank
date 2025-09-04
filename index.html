@@ -481,6 +481,16 @@
     let CUR_DATE = new Date();
     let CHART;
 
+    const EMOJI_MAP = {
+        salary: '💰',
+        food: '🍔',
+        housing: '🏠',
+        transport: '🚗',
+        utilities: '💡',
+        entertainment: '🎬',
+        other: '📦',
+    };
+
     const $ = id => document.getElementById(id);
     const save = () => {
         try {
@@ -584,13 +594,14 @@
             }
 
             monthTransactions.forEach(t => {
-                const transactionDate = createUTCDate(t.date);
+                const transactionDate = new Date(t.date); // Use a new Date object to fix timezone offset on display
+                const emoji = EMOJI_MAP[t.cat] || '❓';
                 const div = document.createElement('div');
                 div.className = 'list-item';
                 div.innerHTML = `
                     <div class="item-details">
                         <strong>${t.desc}</strong>
-                        <small>${t.cat} • ${transactionDate.toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}</small>
+                        <small>${emoji} ${t.cat} • ${transactionDate.toLocaleDateString('en-US', { timeZone: 'UTC' })}</small>
                     </div>
                     <div class="amount-info">
                         <div class="value ${t.type}">${t.amt} ${t.cur}</div>
