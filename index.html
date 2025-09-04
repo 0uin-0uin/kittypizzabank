@@ -485,7 +485,6 @@
     const save = () => {
         try {
             localStorage.setItem('budgetData', JSON.stringify(DATA));
-            console.log("Data saved successfully.");
         } catch (e) {
             console.error("Error saving data:", e);
         }
@@ -541,7 +540,8 @@
 
                 const dayTransactions = DATA.filter(t => {
                     const transactionDate = createUTCDate(t.date);
-                    return transactionDate.getFullYear() === day.getFullYear() && transactionDate.getMonth() === day.getMonth() && transactionDate.getDate() === day.getDate();
+                    // Compare dates without time, using getUTCDate and getUTCMonth
+                    return transactionDate.getUTCFullYear() === day.getFullYear() && transactionDate.getUTCMonth() === day.getMonth() && transactionDate.getUTCDate() === day.getDate();
                 });
                 
                 if (dayTransactions.length) {
@@ -574,7 +574,7 @@
             const y = CUR_DATE.getFullYear(), m = CUR_DATE.getMonth();
             const monthTransactions = DATA.filter(t => {
                 const d = createUTCDate(t.date);
-                return d.getFullYear() === y && d.getMonth() === m;
+                return d.getUTCFullYear() === y && d.getUTCMonth() === m;
             }).sort((a, b) => createUTCDate(b.date) - createUTCDate(a.date));
 
             $('list').innerHTML = '';
@@ -693,7 +693,7 @@
             cur: $('cur').value,
             type: $('typ').value,
             cat: $('cat').value,
-            date: $('dat').value,
+            date: $('dat').value, // Store date as YYYY-MM-DD string
             usd: usdAmount
         };
 
@@ -741,7 +741,7 @@
         const y = CUR_DATE.getFullYear(), m = CUR_DATE.getMonth();
         const transactionsToDelete = DATA.filter(t => {
             const d = createUTCDate(t.date);
-            return d.getFullYear() === y && d.getMonth() === m;
+            return d.getUTCFullYear() === y && d.getUTCMonth() === m;
         });
 
         if (!transactionsToDelete.length) {
@@ -751,7 +751,7 @@
         if (confirm(`Delete ${transactionsToDelete.length} transaction(s) from this month?`)) {
             DATA = DATA.filter(t => {
                 const d = createUTCDate(t.date);
-                return !(d.getFullYear() === y && d.getMonth() === m);
+                return !(d.getUTCFullYear() === y && d.getUTCMonth() === m);
             });
             save();
             refreshAll();
