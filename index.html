@@ -1,817 +1,794 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>BudgetWise - Your Personal Finance Tracker</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <style>
-    /* Variables CSS pour un thème facile à gérer */
-    :root {
-      --primary-color: #4F46E5; /* Indigo */
-      --secondary-color: #6366F1; /* Lighter Indigo */
-      --income-color: #10B981; /* Emerald Green */
-      --expense-color: #EF4444; /* Red */
-      --balance-color: #0EA5E9; /* Sky Blue */
-      --bg-color: #F8FAFC; /* Light Gray Blue */
-      --card-bg: #FFFFFF;
-      --text-color: #1F2937; /* Dark Gray */
-      --light-text-color: #6B7280; /* Medium Gray */
-      --border-color: #E5E7EB; /* Light Gray */
-      --shadow-light: 0 4px 12px rgba(0,0,0,0.06);
-      --shadow-hover: 0 6px 16px rgba(0,0,0,0.1);
-    }
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>BudgetWise - Your Personal Finance Tracker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Variables CSS pour un thème facile à gérer */
+        :root {
+            --primary-color: #4F46E5; /* Indigo */
+            --secondary-color: #6366F1; /* Lighter Indigo */
+            --income-color: #10B981; /* Emerald Green */
+            --expense-color: #EF4444; /* Red */
+            --balance-color: #0EA5E9; /* Sky Blue */
+            --bg-color: #F8FAFC; /* Light Gray Blue */
+            --card-bg: #FFFFFF;
+            --text-color: #1F2937; /* Dark Gray */
+            --light-text-color: #6B7280; /* Medium Gray */
+            --border-color: #E5E7EB; /* Light Gray */
+            --shadow-light: 0 4px 12px rgba(0,0,0,0.06);
+            --shadow-hover: 0 6px 16px rgba(0,0,0,0.1);
+        }
 
-    /* Reset de base et typographie */
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: 'Inter', sans-serif;
-    }
+        /* Reset de base et typographie */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+        }
 
-    body {
-      background: var(--bg-color);
-      padding: 20px;
-      color: var(--text-color);
-      line-height: 1.6;
-    }
+        body {
+            background: var(--bg-color);
+            padding: 20px;
+            color: var(--text-color);
+            line-height: 1.6;
+        }
 
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-    }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
 
-    /* Styles des cartes générales */
-    .card {
-      background: var(--card-bg);
-      border-radius: 16px; /* Plus arrondi */
-      padding: 25px;
-      margin-bottom: 20px;
-      box-shadow: var(--shadow-light);
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    .card:hover {
-      /* transform: translateY(-3px); */
-      box-shadow: var(--shadow-hover);
-    }
+        /* Styles des cartes générales */
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px; /* Plus arrondi */
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow-light);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .card:hover {
+            box-shadow: var(--shadow-hover);
+        }
 
-    h1 {
-      text-align: center;
-      margin-bottom: 30px;
-      font-weight: 700;
-      font-size: 2rem;
-      color: var(--primary-color);
-    }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-weight: 700;
+            font-size: 2rem;
+            color: var(--primary-color);
+        }
 
-    h2 {
-      font-size: 1.4rem;
-      margin-bottom: 20px;
-      color: var(--text-color);
-      border-bottom: 1px solid var(--border-color);
-      padding-bottom: 10px;
-    }
+        h2 {
+            font-size: 1.4rem;
+            margin-bottom: 20px;
+            color: var(--text-color);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
 
-    /* Sommaire des totaux */
-    .summary {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 15px;
-      margin-bottom: 30px;
-    }
+        /* Sommaire des totaux */
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+        }
 
-    .summary div {
-      text-align: center;
-      padding: 20px;
-      border-radius: 12px;
-      color: #fff;
-      font-weight: 600;
-      box-shadow: var(--shadow-light);
-    }
+        .summary div {
+            text-align: center;
+            padding: 20px;
+            border-radius: 12px;
+            color: #fff;
+            font-weight: 600;
+            box-shadow: var(--shadow-light);
+        }
 
-    .summary div h3 {
-      font-size: 0.9rem;
-      opacity: 0.9;
-      font-weight: 500;
-      margin-bottom: 8px;
-    }
+        .summary div h3 {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
 
-    .summary div span {
-      font-size: 1.8rem;
-      display: block;
-    }
+        .summary div span {
+            font-size: 1.8rem;
+            display: block;
+        }
 
-    .summary .income-total { background: var(--income-color); }
-    .summary .expense-total { background: var(--expense-color); }
-    .summary .balance-total { background: var(--balance-color); }
+        .summary .income-total { background: var(--income-color); }
+        .summary .expense-total { background: var(--expense-color); }
+        .summary .balance-total { background: var(--balance-color); }
 
-    /* Layout de la grille principale */
-    .grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
-      margin-bottom: 20px;
-    }
+        /* Layout de la grille principale */
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
 
-    /* Formulaire */
-    form {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 15px;
-    }
+        /* Formulaire */
+        form {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
 
-    .form-group {
-      position: relative;
-    }
+        .form-group {
+            position: relative;
+        }
 
-    .form-group label {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      padding: 0;
-      margin: -1px;
-      overflow: hidden;
-      clip: rect(0, 0, 0, 0);
-      white-space: nowrap;
-      border: 0;
-    }
+        .form-group label {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
 
-    input, select {
-      width: 100%;
-      padding: 12px 15px;
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      font-size: 1rem;
-      color: var(--text-color);
-      background-color: #FDFDFD;
-      transition: border-color 0.2s ease, box-shadow 0.2s ease;
-    }
+        input, select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            color: var(--text-color);
+            background-color: #FDFDFD;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
 
-    input:focus, select:focus {
-      border-color: var(--primary-color);
-      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
-      outline: none;
-    }
+        input:focus, select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+            outline: none;
+        }
 
-    select {
-      -webkit-appearance: none;
-      -moz-appearance: none;
-      appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%234F46E5'%3E%3Cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z' clip-rule='evenodd'/%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-position: right 1rem center;
-      background-size: 1.5em;
-      padding-right: 2.5rem;
-    }
+        select {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%234F46E5'%3E%3Cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z' clip-rule='evenodd'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 1.5em;
+            padding-right: 2.5rem;
+        }
 
-    button {
-      grid-column: 1 / -1;
-      padding: 12px 20px;
-      background: var(--primary-color);
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      font-size: 1.1rem;
-      cursor: pointer;
-      transition: background-color 0.2s ease, transform 0.1s ease;
-      font-weight: 600;
-    }
+        button {
+            grid-column: 1 / -1;
+            padding: 12px 20px;
+            background: var(--primary-color);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            font-weight: 600;
+        }
 
-    button:hover {
-      background: var(--secondary-color);
-      transform: translateY(-1px);
-    }
-    button:active {
-      transform: translateY(0);
-    }
+        button:hover {
+            background: var(--secondary-color);
+            transform: translateY(-1px);
+        }
+        button:active {
+            transform: translateY(0);
+        }
 
-    /* Calendrier */
-    .calendar-nav {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 15px;
-    }
+        /* Calendrier */
+        .calendar-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
 
-    .calendar-nav button {
-      width: auto;
-      padding: 8px 15px;
-      background: var(--border-color);
-      color: var(--text-color);
-      font-size: 1rem;
-      border-radius: 8px;
-      transition: background-color 0.2s ease;
-    }
-    .calendar-nav button:hover {
-      background: #D1D5DB;
-    }
+        .calendar-nav button {
+            width: auto;
+            padding: 8px 15px;
+            background: var(--border-color);
+            color: var(--text-color);
+            font-size: 1rem;
+            border-radius: 8px;
+            transition: background-color 0.2s ease;
+        }
+        .calendar-nav button:hover {
+            background: #D1D5DB;
+        }
 
-    .month-display {
-      font-size: 1.35rem;
-      font-weight: 600;
-      color: var(--primary-color);
-    }
+        .month-display {
+            font-size: 1.35rem;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
 
-    .calendar-header, .calendar-grid {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 5px;
-      text-align: center;
-    }
+        .calendar-header, .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            text-align: center;
+        }
 
-    .calendar-header div {
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: var(--light-text-color);
-      margin-bottom: 5px;
-    }
+        .calendar-header div {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--light-text-color);
+            margin-bottom: 5px;
+        }
 
-    .calendar-day {
-      aspect-ratio: 1 / 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      border-radius: 8px;
-      font-size: 0.95rem;
-      cursor: pointer;
-      position: relative;
-      padding-top: 5px; /* Espace pour le numéro */
-      transition: background-color 0.1s ease, transform 0.1s ease;
-    }
+        .calendar-day {
+            aspect-ratio: 1 / 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            position: relative;
+            padding-top: 5px; /* Espace pour le numéro */
+            transition: background-color 0.1s ease, transform 0.1s ease;
+        }
 
-    .calendar-day:hover {
-      background: #F3F4F6;
-      transform: translateY(-1px);
-    }
-    .calendar-day:active {
-      transform: translateY(0);
-    }
+        .calendar-day:hover {
+            background: #F3F4F6;
+            transform: translateY(-1px);
+        }
+        .calendar-day:active {
+            transform: translateY(0);
+        }
 
+        .calendar-day.today {
+            background: var(--primary-color);
+            color: #fff;
+            font-weight: 700;
+        }
 
-    .calendar-day.today {
-      background: var(--primary-color);
-      color: #fff;
-      font-weight: 700;
-    }
+        .calendar-day.other-month {
+            color: #D1D5DB;
+        }
 
-    .calendar-day.other-month {
-      color: #D1D5DB;
-    }
+        .dots {
+            position: absolute;
+            bottom: 5px;
+            display: flex;
+            gap: 3px;
+        }
 
-    .dots {
-      position: absolute;
-      bottom: 5px;
-      display: flex;
-      gap: 3px;
-    }
+        .dot {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+        }
 
-    .dot {
-      width: 5px;
-      height: 5px;
-      border-radius: 50%;
-    }
+        .dot.income { background: var(--income-color); }
+        .dot.expense { background: var(--expense-color); }
 
-    .dot.income { background: var(--income-color); }
-    .dot.expense { background: var(--expense-color); }
-
-    /* Liste des transactions */
-    .transaction-list {
-      max-height: 320px; /* Légèrement plus haut */
-      overflow-y: auto;
-      padding-right: 10px; /* Pour la scrollbar */
-    }
-    .transaction-list::-webkit-scrollbar { width: 8px; }
-    .transaction-list::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
-    .transaction-list::-webkit-scrollbar-thumb { background: #888; border-radius: 10px; }
-    .transaction-list::-webkit-scrollbar-thumb:hover { background: #555; }
+        /* Liste des transactions */
+        .transaction-list {
+            max-height: 320px; /* Légèrement plus haut */
+            overflow-y: auto;
+            padding-right: 10px; /* Pour la scrollbar */
+        }
+        .transaction-list::-webkit-scrollbar { width: 8px; }
+        .transaction-list::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
+        .transaction-list::-webkit-scrollbar-thumb { background: #888; border-radius: 10px; }
+        .transaction-list::-webkit-scrollbar-thumb:hover { background: #555; }
 
 
-    .list-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 0;
-      border-bottom: 1px solid var(--border-color);
-      transition: background-color 0.1s ease;
-    }
-    .list-item:hover {
-      background-color: #F9FAFB;
-    }
+        .list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border-color);
+            transition: background-color 0.1s ease;
+        }
+        .list-item:hover {
+            background-color: #F9FAFB;
+        }
 
-    .list-item:last-child {
-      border-bottom: none;
-    }
+        .list-item:last-child {
+            border-bottom: none;
+        }
 
-    .item-details strong {
-      display: block;
-      font-size: 1rem;
-      color: var(--text-color);
-    }
-    .item-details small {
-      font-size: 0.8rem;
-      color: var(--light-text-color);
-    }
+        .item-details strong {
+            display: block;
+            font-size: 1rem;
+            color: var(--text-color);
+        }
+        .item-details small {
+            font-size: 0.8rem;
+            color: var(--light-text-color);
+        }
 
-    .amount-info {
-      text-align: right;
-    }
-    .amount-info .value {
-      font-weight: 600;
-      font-size: 1.1rem;
-    }
-    .amount-info small {
-      display: block;
-      font-size: 0.75rem;
-      color: var(--light-text-color);
-    }
+        .amount-info {
+            text-align: right;
+        }
+        .amount-info .value {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+        .amount-info small {
+            display: block;
+            font-size: 0.75rem;
+            color: var(--light-text-color);
+        }
 
-    .amount-info .income { color: var(--income-color); }
-    .amount-info .expense { color: var(--expense-color); }
+        .amount-info .income { color: var(--income-color); }
+        .amount-info .expense { color: var(--expense-color); }
 
-    .delete-btn {
-      background: var(--expense-color);
-      color: #fff;
-      border: none;
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      cursor: pointer;
-      font-size: 16px;
-      line-height: 1;
-      opacity: 0;
-      transition: opacity 0.2s ease, transform 0.1s ease;
-      margin-left: 15px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .list-item:hover .delete-btn {
-      opacity: 1;
-    }
-    .delete-btn:hover {
-      background: #DC2626;
-      transform: scale(1.05);
-    }
+        .delete-btn {
+            background: var(--expense-color);
+            color: #fff;
+            border: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            line-height: 1;
+            opacity: 0;
+            transition: opacity 0.2s ease, transform 0.1s ease;
+            margin-left: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .list-item:hover .delete-btn {
+            opacity: 1;
+        }
+        .delete-btn:hover {
+            background: #DC2626;
+            transform: scale(1.05);
+        }
 
-    /* Zone de suppression */
-    .delete-zone {
-      background: #FEF2F2;
-      border: 2px dashed #FCA5A5; /* Bordure plus visible */
-      border-radius: 12px;
-      padding: 20px;
-      text-align: center;
-    }
+        /* Zone de suppression */
+        .delete-zone {
+            background: #FEF2F2;
+            border: 2px dashed #FCA5A5; /* Bordure plus visible */
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
 
-    .delete-zone h4 {
-      color: #B91C1C;
-      margin-bottom: 15px;
-      font-size: 1.1rem;
-      font-weight: 600;
-    }
+        .delete-zone h4 {
+            color: #B91C1C;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
 
-    .delete-actions {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-      flex-wrap: wrap; /* Pour la réactivité */
-    }
+        .delete-actions {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap; /* Pour la réactivité */
+        }
 
-    .delete-actions button {
-      background: var(--expense-color);
-      font-size: 0.9rem;
-      padding: 8px 15px;
-      border-radius: 8px;
-      color: #fff;
-      border: none;
-      cursor: pointer;
-      transition: background-color 0.2s ease, transform 0.1s ease;
-    }
-    .delete-actions button:hover {
-      background: #DC2626;
-      transform: translateY(-1px);
-    }
+        .delete-actions button {
+            background: var(--expense-color);
+            font-size: 0.9rem;
+            padding: 8px 15px;
+            border-radius: 8px;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+        }
+        .delete-actions button:hover {
+            background: #DC2626;
+            transform: translateY(-1px);
+        }
 
-    /* Graphique */
-    .chart-container {
-      height: 250px; /* Un peu plus grand */
-      margin-top: 20px;
-    }
+        /* Graphique */
+        .chart-container {
+            height: 250px; /* Un peu plus grand */
+            margin-top: 20px;
+        }
 
-    /* Responsive Design */
-    @media (max-width: 900px) {
-      .grid {
-        grid-template-columns: 1fr;
-      }
-    }
+        /* Responsive Design */
+        @media (max-width: 900px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
 
-    @media (max-width: 600px) {
-      body { padding: 15px; }
-      h1 { font-size: 1.7rem; margin-bottom: 20px; }
-      h2 { font-size: 1.2rem; }
-      .summary { grid-template-columns: 1fr; }
-      form { grid-template-columns: 1fr; }
-      .card { padding: 20px; }
-      .summary div span { font-size: 1.5rem; }
-      .calendar-nav { flex-direction: column; gap: 10px; }
-      .calendar-nav button { width: 100%; }
-      .month-display { margin: 10px 0; }
-      .transaction-list { max-height: 250px; }
-    }
-  </style>
+        @media (max-width: 600px) {
+            body { padding: 15px; }
+            h1 { font-size: 1.7rem; margin-bottom: 20px; }
+            h2 { font-size: 1.2rem; }
+            .summary { grid-template-columns: 1fr; }
+            form { grid-template-columns: 1fr; }
+            .card { padding: 20px; }
+            .summary div span { font-size: 1.5rem; }
+            .calendar-nav { flex-direction: column; gap: 10px; }
+            .calendar-nav button { width: 100%; }
+            .month-display { margin: 10px 0; }
+            .transaction-list { max-height: 250px; }
+        }
+    </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="card">
-    <h1>BudgetWise 📈</h1>
-    <div class="summary">
-      <div class="income-total">
-        <h3>Total Income</h3>
-        <span id="inc">$0.00</span>
-      </div>
-      <div class="expense-total">
-        <h3>Total Expenses</h3>
-        <span id="exp">$0.00</span>
-      </div>
-      <div class="balance-total">
-        <h3>Current Balance</h3>
-        <span id="sol">$0.00</span>
-      </div>
-    </div>
-  </div>
+    <div class="card">
+        <h1>BudgetWise 📈</h1>
+        <div class="summary">
+            <div class="income-total">
+                <h3>Total Income</h3>
+                <span id="inc">$0.00</span>
+            </div>
+            <div class="expense-total">
+                <h3>Total Expenses</h3>
+                <span id="exp">$0.00</span>
+            </div>
+            <div class="balance-total">
+                <h3>Current Balance</h3>
+                <span id="sol">$0.00</span>
+            </div>
+        </div>
+    </div>
 
-    <div class="grid">
-    <div class="card">
-      <h2>Add a new transaction</h2>
-      <form id="form" aria-label="Add new transaction form">
-        <div class="form-group">
-          <label for="desc">Description</label>
-          <input id="desc" type="text" placeholder="e.g., Groceries, Salary" required aria-required="true">
-        </div>
-        <div class="form-group">
-          <label for="mnt">Amount</label>
-          <input id="mnt" type="number" step="0.01" placeholder="Amount (e.g., 50.00)" required aria-required="true">
-        </div>
-        <div class="form-group">
-          <label for="typ">Transaction Type</label>
-          <select id="typ" required aria-required="true">
-            <option value="">Select Type</option>
-            <option value="income">Income</option>
-            <option value="expense">Expense</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="cur">Currency</label>
-          <select id="cur" required aria-required="true">
-            <option value="">Select Currency</option>
-            <option value="EUR">EUR</option>
-            <option value="USD">USD</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="cat">Category</label>
-          <select id="cat" required aria-required="true">
-            <option value="">Select Category</option>
-            <option value="salary">Salary</option>
-            <option value="food">Food</option>
-            <option value="housing">Housing</option>
-            <option value="transport">Transport</option>
-            <option value="utilities">Utilities</option>
-            <option value="entertainment">Entertainment</option>
-            <option value="other">Other</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="dat">Date</label>
-          <input id="dat" type="date" required aria-required="true">
-        </div>
-        <button type="submit" aria-label="Add transaction">Add Transaction</button>
-      </form>
-    </div>
+    <div class="grid">
+        <div class="card">
+            <h2>Add a new transaction</h2>
+            <form id="form" aria-label="Add new transaction form">
+                <div class="form-group">
+                    <label for="desc">Description</label>
+                    <input id="desc" type="text" placeholder="e.g., Groceries, Salary" required aria-required="true">
+                </div>
+                <div class="form-group">
+                    <label for="mnt">Amount</label>
+                    <input id="mnt" type="number" step="0.01" placeholder="Amount (e.g., 50.00)" required aria-required="true">
+                </div>
+                <div class="form-group">
+                    <label for="typ">Transaction Type</label>
+                    <select id="typ" required aria-required="true">
+                        <option value="">Select Type</option>
+                        <option value="income">Income</option>
+                        <option value="expense">Expense</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="cur">Currency</label>
+                    <select id="cur" required aria-required="true">
+                        <option value="">Select Currency</option>
+                        <option value="EUR">EUR</option>
+                        <option value="USD">USD</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="cat">Category</label>
+                    <select id="cat" required aria-required="true">
+                        <option value="">Select Category</option>
+                        <option value="salary">Salary</option>
+                        <option value="food">Food</option>
+                        <option value="housing">Housing</option>
+                        <option value="transport">Transport</option>
+                        <option value="utilities">Utilities</option>
+                        <option value="entertainment">Entertainment</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="dat">Date</label>
+                    <input id="dat" type="date" required aria-required="true">
+                </div>
+                <button type="submit" aria-label="Add transaction">Add Transaction</button>
+            </form>
+        </div>
 
-    <div class="card">
-      <h2>Calendar View</h2>
-      <div class="calendar-nav" role="navigation" aria-label="Calendar navigation">
-        <button id="prev" aria-label="Previous month">‹</button>
-        <div class="month-display" id="mois" aria-live="polite" aria-atomic="true"></div>
-        <button id="next" aria-label="Next month">›</button>
-      </div>
-      <div class="calendar-header" role="row">
-        <div role="columnheader">Mon</div>
-        <div role="columnheader">Tue</div>
-        <div role="columnheader">Wed</div>
-        <div role="columnheader">Thu</div>
-        <div role="columnheader">Fri</div>
-        <div role="columnheader">Sat</div>
-        <div role="columnheader">Sun</div>
-      </div>
-      <div id="cal" class="calendar-grid" role="grid"></div>
-    </div>
-  </div>
+        <div class="card">
+            <h2>Calendar View</h2>
+            <div class="calendar-nav" role="navigation" aria-label="Calendar navigation">
+                <button id="prev" aria-label="Previous month">‹</button>
+                <div class="month-display" id="mois" aria-live="polite" aria-atomic="true"></div>
+                <button id="next" aria-label="Next month">›</button>
+            </div>
+            <div class="calendar-header" role="row">
+                <div role="columnheader">Mon</div>
+                <div role="columnheader">Tue</div>
+                <div role="columnheader">Wed</div>
+                <div role="columnheader">Thu</div>
+                <div role="columnheader">Fri</div>
+                <div role="columnheader">Sat</div>
+                <div role="columnheader">Sun</div>
+            </div>
+            <div id="cal" class="calendar-grid" role="grid"></div>
+        </div>
+    </div>
 
-    <div class="grid">
-    <div class="card">
-      <h2>Recent Transactions</h2>
-      <div id="list" class="transaction-list"></div>
-    </div>
-    <div class="card">
-      <h2>Expense Breakdown</h2>
-      <div class="chart-container">
-        <canvas id="chart" role="img" aria-label="Doughnut chart showing expense categories"></canvas>
-      </div>
-    </div>
-  </div>
+    <div class="grid">
+        <div class="card">
+            <h2>Recent Transactions</h2>
+            <div id="list" class="transaction-list"></div>
+        </div>
+        <div class="card">
+            <h2>Expense Breakdown</h2>
+            <div class="chart-container">
+                <canvas id="chart" role="img" aria-label="Doughnut chart showing expense categories"></canvas>
+            </div>
+        </div>
+    </div>
 
-    <div class="card delete-zone">
-    <h4>🗑️ Manage Data</h4>
-    <div class="delete-actions">
-      <button id="delLast" aria-label="Delete last transaction">Delete Last</button>
-      <button id="delMonth" aria-label="Delete all transactions for the current month">Delete Month</button>
-      <button id="reset" aria-label="Reset all budget data">Reset All</button>
-    </div>
-  </div>
+    <div class="card delete-zone">
+        <h4>🗑️ Manage Data</h4>
+        <div class="delete-actions">
+            <button id="delLast" aria-label="Delete last transaction">Delete Last</button>
+            <button id="delMonth" aria-label="Delete all transactions for the current month">Delete Month</button>
+            <button id="reset" aria-label="Reset all budget data">Reset All</button>
+        </div>
+    </div>
 </div>
 
 <script>
-/* ---------- CONFIG ---------- */
-// Coût fixe pour l'exemple, dans une vraie application, cela viendrait d'une API de taux de change
-const EUR2USD = 1.08; 
-let DATA = JSON.parse(localStorage.getItem('budgetEn')) || [];
-let CUR_DATE = new Date();
-let CHART; // Variable pour stocker l'instance du graphique Chart.js
+    /* ---------- CONFIG ---------- */
+    const EUR2USD = 1.08; 
+    let DATA = JSON.parse(localStorage.getItem('budgetEn')) || [];
+    let CUR_DATE = new Date();
+    let CHART;
 
-/* ---------- UTILS ---------- */
-const $ = id => document.getElementById(id);
-const save = () => localStorage.setItem('budgetEn', JSON.stringify(DATA));
-// Formatage de la monnaie pour un affichage propre
-const fmt = n => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    /* ---------- UTILS ---------- */
+    const $ = id => document.getElementById(id);
+    const save = () => localStorage.setItem('budgetEn', JSON.stringify(DATA));
+    const fmt = n => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-/* ---------- TOTALS ---------- */
-// Met à jour les totaux (revenus, dépenses, solde)
-function refreshTotals(){
-  const inc = DATA.filter(t => t.type === 'income').reduce((s, t) => s + t.usd, 0);
-  const exp = DATA.filter(t => t.type === 'expense').reduce((s, t) => s + t.usd, 0);
-  $('inc').textContent = '$' + fmt(inc);
-  $('exp').textContent = '$' + fmt(exp);
-  $('sol').textContent = '$' + fmt(inc - exp);
-}
+    /* ---------- TOTALS ---------- */
+    function refreshTotals(){
+        const inc = DATA.filter(t => t.type === 'income').reduce((s, t) => s + t.usd, 0);
+        const exp = DATA.filter(t => t.type === 'expense').reduce((s, t) => s + t.usd, 0);
+        $('inc').textContent = '$' + fmt(inc);
+        $('exp').textContent = '$' + fmt(exp);
+        $('sol').textContent = '$' + fmt(inc - exp);
+    }
 
-/* ---------- CALENDAR ---------- */
-// Construit et affiche le calendrier du mois courant
-function buildCalendar(){
-  const y = CUR_DATE.getFullYear(), m = CUR_DATE.getMonth();
-  $('mois').textContent = new Date(y, m).toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
-  
-  const firstDayOfMonth = new Date(y, m, 1);
-  const lastDayOfMonth = new Date(y, m + 1, 0);
+    /* ---------- CALENDAR ---------- */
+    function buildCalendar(){
+        const y = CUR_DATE.getFullYear(), m = CUR_DATE.getMonth();
+        $('mois').textContent = new Date(y, m).toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
+        
+        const firstDayOfMonth = new Date(y, m, 1);
+        const startDay = new Date(firstDayOfMonth);
+        startDay.setDate(startDay.getDate() - (startDay.getDay() === 0 ? 6 : startDay.getDay() - 1)); 
 
-  // Calcul du premier jour à afficher (début de la semaine du 1er du mois)
-  const startDay = new Date(firstDayOfMonth);
-  // Ajuste pour que la semaine commence le Lundi (0=Dim, 1=Lun...)
-  startDay.setDate(startDay.getDate() - (startDay.getDay() === 0 ? 6 : startDay.getDay() - 1)); 
+        $('cal').innerHTML = '';
 
-  $('cal').innerHTML = '';
+        for (let i = 0; i < 42; i++) {
+            const day = new Date(startDay);
+            day.setDate(startDay.getDate() + i);
 
-  for (let i = 0; i < 42; i++) { // Affiche 6 semaines complètes
-    const day = new Date(startDay);
-    day.setDate(startDay.getDate() + i);
+            const dayDiv = document.createElement('div');
+            dayDiv.className = 'calendar-day';
+            dayDiv.textContent = day.getDate();
+            dayDiv.setAttribute('role', 'gridcell');
+            dayDiv.setAttribute('aria-label', day.toDateString());
 
-    const dayDiv = document.createElement('div');
-    dayDiv.className = 'calendar-day';
-    dayDiv.textContent = day.getDate();
-    dayDiv.setAttribute('role', 'gridcell');
-    dayDiv.setAttribute('aria-label', day.toDateString());
+            if (day.getMonth() !== m) {
+                dayDiv.classList.add('other-month');
+            }
+            if (day.toDateString() === new Date().toDateString()) {
+                dayDiv.classList.add('today');
+            }
 
-    if (day.getMonth() !== m) {
-      dayDiv.classList.add('other-month');
-    }
-    if (day.toDateString() === new Date().toDateString()) {
-      dayDiv.classList.add('today');
-    }
+            const dayTransactions = DATA.filter(t => new Date(t.date).toDateString() === day.toDateString());
+            if (dayTransactions.length) {
+                const dotsContainer = document.createElement('div');
+                dotsContainer.className = 'dots';
+                if (dayTransactions.some(t => t.type === 'income')) {
+                    const dot = document.createElement('div'); dot.className = 'dot income'; dotsContainer.appendChild(dot);
+                }
+                if (dayTransactions.some(t => t.type === 'expense')) {
+                    const dot = document.createElement('div'); dot.className = 'dot expense'; dotsContainer.appendChild(dot);
+                }
+                dayDiv.appendChild(dotsContainer);
+            }
 
-    // Ajoute des points pour les transactions
-    const dayTransactions = DATA.filter(t => new Date(t.date).toDateString() === day.toDateString());
-    if (dayTransactions.length) {
-      const dotsContainer = document.createElement('div');
-      dotsContainer.className = 'dots';
-      if (dayTransactions.some(t => t.type === 'income')) {
-        const dot = document.createElement('div'); dot.className = 'dot income'; dotsContainer.appendChild(dot);
-      }
-      if (dayTransactions.some(t => t.type === 'expense')) {
-        const dot = document.createElement('div'); dot.className = 'dot expense'; dotsContainer.appendChild(dot);
-      }
-      dayDiv.appendChild(dotsContainer);
-    }
+            dayDiv.addEventListener('click', () => {
+                $('dat').valueAsDate = day;
+            });
+            $('cal').appendChild(dayDiv);
+        }
+    }
 
-    dayDiv.addEventListener('click', () => {
-      $('dat').valueAsDate = day; // Remplit le champ date du formulaire
-    });
-    $('cal').appendChild(dayDiv);
-  }
-}
+    /* ---------- MONTH LIST ---------- */
+    function refreshList(){
+        const y = CUR_DATE.getFullYear(), m = CUR_DATE.getMonth();
+        const monthTransactions = DATA.filter(t => {
+            const d = new Date(t.date);
+            return d.getFullYear() === y && d.getMonth() === m;
+        }).sort((a, b) => new Date(b.date) - new Date(a.date));
 
-/* ---------- MONTH LIST ---------- */
-// Affiche la liste des transactions pour le mois courant
-function refreshList(){
-  const y = CUR_DATE.getFullYear(), m = CUR_DATE.getMonth();
-  const monthTransactions = DATA.filter(t => {
-    const d = new Date(t.date);
-    return d.getFullYear() === y && d.getMonth() === m;
-  }).sort((a, b) => new Date(b.date) - new Date(a.date)); // Trie par date décroissante
+        $('list').innerHTML = '';
 
-  $('list').innerHTML = ''; // Vide la liste existante
+        if (!monthTransactions.length) {
+            $('list').innerHTML = '<p style="text-align:center;color:var(--light-text-color); padding: 20px;">No transactions for this month.</p>';
+            return;
+        }
 
-  if (!monthTransactions.length) {
-    $('list').innerHTML = '<p style="text-align:center;color:var(--light-text-color); padding: 20px;">No transactions for this month.</p>';
-    return;
-  }
+        monthTransactions.forEach(t => {
+            const div = document.createElement('div');
+            div.className = 'list-item';
+            div.setAttribute('role', 'listitem');
+            div.innerHTML = `
+                <div class="item-details">
+                    <strong>${t.desc}</strong>
+                    <small>${t.cat} • ${new Date(t.date).toLocaleDateString('en-US')}</small>
+                </div>
+                <div class="amount-info">
+                    <div class="value ${t.type}">${t.amt} ${t.cur}</div>
+                    <small>$${fmt(t.usd)}</small>
+                </div>
+                <button class="delete-btn" onclick="delTrans(${t.id})" aria-label="Delete transaction ${t.desc}">×</button>
+            `;
+            $('list').appendChild(div);
+        });
+    }
 
-  monthTransactions.forEach(t => {
-    const div = document.createElement('div');
-    div.className = 'list-item';
-    div.setAttribute('role', 'listitem');
-    div.innerHTML = `
-      <div class="item-details">
-        <strong>${t.desc}</strong>
-        <small>${t.cat} • ${new Date(t.date).toLocaleDateString('en-US')}</small>
-      </div>
-      <div class="amount-info">
-        <div class="value ${t.type}">${t.amt} ${t.cur}</div>
-        <small>$${fmt(t.usd)}</small>
-      </div>
-      <button class="delete-btn" onclick="delTrans(${t.id})" aria-label="Delete transaction ${t.desc}">×</button>
-    `;
-    $('list').appendChild(div);
-  });
-}
+    /* ---------- CHART ---------- */
+    function refreshChart(){
+        const ctx = $('chart').getContext('2d');
+        if (CHART) CHART.destroy();
 
-/* ---------- CHART ---------- */
-// Met à jour le graphique des dépenses par catégorie
-function refreshChart(){
-  const ctx = $('chart').getContext('2d');
-  if (CHART) CHART.destroy(); // Détruit l'ancien graphique avant d'en créer un nouveau
+        const expensesByCategory = DATA.filter(t => t.type === 'expense').reduce((acc, t) => {
+            acc[t.cat] = (acc[t.cat] || 0) + t.usd;
+            return acc;
+        }, {});
 
-  const expensesByCategory = DATA.filter(t => t.type === 'expense').reduce((acc, t) => {
-    acc[t.cat] = (acc[t.cat] || 0) + t.usd;
-    return acc;
-  }, {});
+        if (!Object.keys(expensesByCategory).length) {
+            ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+            return;
+        }
 
-  // Si aucune dépense, efface le canvas
-  if (!Object.keys(expensesByCategory).length) {
-    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-    return;
-  }
+        CHART = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(expensesByCategory),
+                datasets: [{
+                    data: Object.values(expensesByCategory),
+                    backgroundColor: ['#4F46E5', '#8B5CF6', '#EC4899', '#F59E0B', '#10B981', '#EF4444', '#0EA5E9', '#EAB308'],
+                    hoverOffset: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '70%',
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            font: {
+                                size: 12,
+                                family: 'Inter'
+                            },
+                            color: var('--text-color'),
+                            usePointStyle: true,
+                        },
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed !== null) {
+                                    label += '$' + fmt(context.parsed);
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
 
-  CHART = new Chart(ctx, {
-    type: 'doughnut',
-    data: {
-      labels: Object.keys(expensesByCategory),
-      datasets: [{
-        data: Object.values(expensesByCategory),
-        backgroundColor: ['#4F46E5', '#8B5CF6', '#EC4899', '#F59E0B', '#10B981', '#EF4444', '#0EA5E9', '#EAB308'], // Couleurs variées
-        hoverOffset: 8 // Effet au survol
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      cutout: '70%', // Taille du trou central
-      plugins: {
-        legend: {
-          position: 'right', // Légende à droite
-          labels: {
-            font: {
-              size: 12,
-              family: 'Inter'
-            },
-            color: var('--text-color'),
-            usePointStyle: true, // Petits cercles pour la légende
-          },
-        },
-        tooltip: {
-          callbacks: {
-            label: function(context) {
-              let label = context.label || '';
-              if (label) {
-                label += ': ';
-              }
-              if (context.parsed !== null) {
-                label += '$' + fmt(context.parsed);
-              }
-              return label;
-            }
-          }
-        }
-      }
-    }
-  });
-}
+    /* ---------- DELETE ACTIONS ---------- */
+    window.delTrans = id => {
+        if (confirm('Are you sure you want to delete this transaction?')) {
+            DATA = DATA.filter(t => t.id !== id);
+            save();
+            refreshAll();
+        }
+    };
 
-/* ---------- DELETE ACTIONS ---------- */
-// Supprime une transaction spécifique par son ID
-window.delTrans = id => {
-  if (confirm('Are you sure you want to delete this transaction?')) {
-    DATA = DATA.filter(t => t.id !== id);
-    save();
-    refreshAll();
-  }
-};
+    $('delLast').onclick = () => {
+        if (!DATA.length) {
+            alert('There are no transactions to delete.');
+            return;
+        }
+        if (confirm('Delete the last transaction?')) {
+            DATA.pop();
+            save();
+            refreshAll();
+        }
+    };
 
-// Supprime la dernière transaction ajoutée
-$('delLast').onclick = () => {
-  if (!DATA.length) {
-    alert('There are no transactions to delete.');
-    return;
-  }
-  if (confirm('Delete the last transaction?')) {
-    DATA.pop(); // Retire le dernier élément du tableau
-    save();
-    refreshAll();
-  }
-};
+    $('delMonth').onclick = () => {
+        const y = CUR_DATE.getFullYear(), m = CUR_DATE.getMonth();
+        const transactionsToDelete = DATA.filter(t => {
+            const d = new Date(t.date);
+            return d.getFullYear() === y && d.getMonth() === m;
+        });
 
-// Supprime toutes les transactions du mois courant
-$('delMonth').onclick = () => {
-  const y = CUR_DATE.getFullYear(), m = CUR_DATE.getMonth();
-  const transactionsToDelete = DATA.filter(t => {
-    const d = new Date(t.date);
-    return d.getFullYear() === y && d.getMonth() === m;
-  });
+        if (!transactionsToDelete.length) {
+            alert('No transactions found for the current month.');
+            return;
+        }
+        if (confirm(`Delete ${transactionsToDelete.length} transaction(s) from this month?`)) {
+            DATA = DATA.filter(t => {
+                const d = new Date(t.date);
+                return !(d.getFullYear() === y && d.getMonth() === m);
+            });
+            save();
+            refreshAll();
+        }
+    };
 
-  if (!transactionsToDelete.length) {
-    alert('No transactions found for the current month.');
-    return;
-  }
-  if (confirm(`Delete ${transactionsToDelete.length} transaction(s) from this month?`)) {
-    // Filtre les données pour exclure les transactions du mois courant
-    DATA = DATA.filter(t => {
-      const d = new Date(t.date);
-      return !(d.getFullYear() === y && d.getMonth() === m);
-    });
-    save();
-    refreshAll();
-  }
-};
+    $('reset').onclick = () => {
+        if (confirm('Are you absolutely sure you want to delete ALL your budget data? This action cannot be undone.')) {
+            if (confirm('Seriously? All data will be lost.')) {
+                DATA = [];
+                save();
+                refreshAll();
+            }
+        }
+    };
 
-// Réinitialise toutes les données
-$('reset').onclick = () => {
-  if (confirm('Are you absolutely sure you want to delete ALL your budget data? This action cannot be undone.')) {
-    if (confirm('Seriously? All data will be lost.')) {
-      DATA = [];
-      save();
-      refreshAll();
-    }
-  }
-};
+    /* ---------- FORM SUBMISSION ---------- */
+    $('form').addEventListener('submit', e => {
+        e.preventDefault();
 
-/* ---------- FORM SUBMISSION ---------- */
-$('form').addEventListener('submit', e => {
-  e.preventDefault(); // Empêche le rechargement de la page
+        const usdAmount = $('cur').value === 'USD' ? +$('mnt').value : +($('mnt').value * EUR2USD);
 
-  // Convertit le montant en USD si la devise est EUR
-  const usdAmount = $('cur').value === 'USD' ? +$('mnt').value : +($('mnt').value * EUR2USD);
+        DATA.push({
+            id: Date.now(),
+            desc: $('desc').value,
+            amt: +$('mnt').value,
+            cur: $('cur').value,
+            type: $('typ').value,
+            cat: $('cat').value,
+            date: $('dat').value,
+            usd: usdAmount
+        });
+        
+        save();
+        refreshAll();
+        e.target.reset();
+        $('dat').valueAsDate = new Date();
+    });
 
-  // Ajoute la nouvelle transaction aux données
-  DATA.push({
-    id: Date.now(), // ID unique basé sur le timestamp
-    desc: $('desc').value,
-    amt: +$('mnt').value, // Montant original (ex: en EUR)
-    cur: $('cur').value, // Devise originale
-    type: $('typ').value, // Type de transaction (income/expense)
-    cat: $('cat').value, // Catégorie
-    date: $('dat').value, // Date de la transaction
-    usd: usdAmount // Montant converti en USD
-  });
-  
-  save(); // Sauvegarde les données dans le localStorage
-  refreshAll(); // Met à jour l'interface
-  e.target.reset(); // Réinitialise le formulaire
-  $('dat').valueAsDate = new Date(); // Réinitialise la date au jour courant
-});
+    /* ---------- CALENDAR NAVIGATION ---------- */
+    $('prev').onclick = () => {
+        CUR_DATE.setMonth(CUR_DATE.getMonth() - 1);
+        refreshAll();
+    };
+    $('next').onclick = () => {
+        CUR_DATE.setMonth(CUR_DATE.getMonth() + 1);
+        refreshAll();
+    };
 
-/* ---------- CALENDAR NAVIGATION ---------- */
-$('prev').onclick = () => {
-  CUR_DATE.setMonth(CUR_DATE.getMonth() - 1); // Recule d'un mois
-  refreshAll();
-};
-$('next').onclick = () => {
-  CUR_DATE.setMonth(CUR_DATE.getMonth() + 1); // Avance d'un mois
-  refreshAll();
-};
+    /* ---------- INITIALISATION ---------- */
+    function refreshAll(){
+        refreshTotals();
+        buildCalendar();
+        refreshList();
+        refreshChart();
+    }
 
-/* ---------- INITIALISATION ---------- */
-// Fonction principale pour rafraîchir toutes les sections de l'UI
-function refreshAll(){
-  refreshTotals();
-  buildCalendar();
-  refreshList();
-  refreshChart();
-}
-
-// Lance le rafraîchissement initial au chargement de la page
-refreshAll();
+    refreshAll();
 </script>
 </body>
 </html>
