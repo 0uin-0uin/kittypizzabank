@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Budget + Calendar</title>
+  <title>Budget - Save Fixed</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     :root{--p:#6366f1;--g:#10b981;--r:#ef4444;--b:#f5f5f5}
@@ -45,15 +45,20 @@
     .del-actions button{background:var(--r);font-size:.8rem;padding:6px}
     .del-actions button:hover{background:#dc2626}
     .chart-container{height:200px;margin-top:10px}
+    /* DEBUG BAR */
+    .debug-bar{background:#fef3c7;border:1px solid #f59e0b;border-radius:8px;padding:10px;margin-bottom:15px;font-size:.8rem;color:#92400e;display:none}
     @media(max-width:700px){.grid{grid-template-columns:1fr}.sum{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
 
 <div class="container">
+  <!-- DEBUG BAR -->
+  <div id="debug" class="debug-bar"></div>
+
   <!-- TOTALS -->
   <div class="card">
-    <h1>💰 Real-time Budget</h1>
+    <h1>💰 Budget (Save Fixed)</h1>
     <div class="sum">
       <div class="i"><h3>Income</h3><span id="inc">$0.00</span></div>
       <div class="e"><h3>Expenses</h3><span id="exp">$0.00</span></div>
@@ -114,8 +119,21 @@ let CHART;
 
 /* ---------- UTILS ---------- */
 const $ = id => document.getElementById(id);
-const save = () => localStorage.setItem('budgetEn',JSON.stringify(DATA));
+const save = () => {
+  try {
+    localStorage.setItem('budgetEn', JSON.stringify(DATA));
+    showDebug('✅ Saved to localStorage');
+  } catch (e) {
+    showDebug('❌ Save failed: ' + e.message);
+  }
+};
 const fmt = n => n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const showDebug = msg => {
+  const d = $('debug');
+  d.textContent = msg;
+  d.style.display = 'block';
+  setTimeout(() => d.style.display = 'none', 3000);
+};
 
 /* ---------- TOTALS ---------- */
 function refreshTotals(){
@@ -138,7 +156,6 @@ function buildCalendar(){
     const dayDiv = document.createElement('div'); dayDiv.className='cal-day'; dayDiv.textContent=d.getDate();
     if(d.getMonth()!==m) dayDiv.classList.add('other-month');
     if(d.toDateString()===new Date().toDateString()) dayDiv.classList.add('today');
-    // dots
     const dayTrans = DATA.filter(t=>new Date(t.date).toDateString()===d.toDateString());
     if(dayTrans.length){
       const dots=document.createElement('div'); dots.className='dots';
@@ -187,12 +204,15 @@ $('delMonth').onclick=()=>{
 };
 $('reset').onclick=()=>{if(confirm('Delete everything?')){if(confirm('Really everything?')){DATA=[];save();refreshAll();}}};
 
-/* ---------- FORM ---------- */
+/* ---------- FORM + SUBMIT ---------- */
 $('form').addEventListener('submit',e=>{
   e.preventDefault();
   const usd=$('cur').value==='USD'?+$('mnt').value:+($('mnt').value*EUR2USD);
-  DATA.push({id:Date.now(),desc:$('desc').value,amt:+ $('mnt').value,cur:$('cur').value,typ:$('typ').value,cat:$('cat').value,date:$('dat').value,usd});
-  save();refreshAll();
+  const newTrans={id:Date.now(),desc:$('desc').value,amt:+ $('mnt').value,cur:$('cur').value,typ:$('typ').value,cat:$('cat').value,date:$('dat').value,usd};
+  DATA.push(newTrans);
+  save();
+  showDebug('✅ Transaction added & saved');
+  refreshAll();
   e.target.reset();
   $('dat').valueAsDate=new Date();
 });
