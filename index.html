@@ -304,6 +304,9 @@
             background: #DC2626;
             transform: scale(1.05);
         }
+        .delete-btn:active {
+            transform: translateY(0);
+        }
         .delete-zone {
             background: #FEF2F2;
             border: 2px dashed #FCA5A5;
@@ -555,46 +558,62 @@
 <script type="module">
     // START: Firebase SDK imports
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, collection, onSnapshot, addDoc, deleteDoc, query, orderBy, getDocs, doc, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-    import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getFirestore, collection, onSnapshot, addDoc, deleteDoc, query, getDocs, doc, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
     import { setLogLevel } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
     setLogLevel('debug'); // Enable debug logging for Firebase
 
-    const __app_id = "default-app-id";
-    const __firebase_config = JSON.stringify({
-        apiKey: "AIzaSyA1fLyj-6OCXb8ef1n_dv9o_QzVzBXB9Ws",
-        authDomain: "kittypizzabank.firebaseapp.com",
-        projectId: "kittypizzabank",
-        storageBucket: "kittypizzabank.firebasestorage.app",
-        messagingSenderId: "904067134114",
-        appId: "1:904067134114:web:9c5e2135527a214618ddfb",
-        measurementId: "G-DLL44SY3YK"
-    });
-    const __initial_auth_token = "some-token";
-
-    const firebaseConfig = JSON.parse(__firebase_config);
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const auth = getAuth(app);
-    let transactionsCollection;
     const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-
+    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+    const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+    
+    let db, auth;
+    let transactionsCollection;
+    
     /* ---------- AUTHENTICATION AND DATA LISTENER ---------- */
-    // Sign in anonymously to get a user ID, which is required by Firebase security rules
-    // if `request.auth != null` is used.
+    // Initialize Firebase only if the config is available
+    if (Object.keys(firebaseConfig).length > 0) {
+        const app = initializeApp(firebaseConfig);
+        db = getFirestore(app);
+        auth = getAuth(app);
+
+        // Listen for authentication state changes and set up the listener
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                console.log("User is signed in. User ID:", user.uid);
+                initFirebaseAndListen();
+            } else {
+                console.log("User is not signed in. Attempting to sign in.");
+                try {
+                    if (initialAuthToken) {
+                        await signInWithCustomToken(auth, initialAuthToken);
+                        console.log("Signed in with custom token.");
+                    } else {
+                        await signInAnonymously(auth);
+                        console.log("Signed in anonymously.");
+                    }
+                } catch (error) {
+                    console.error("Authentication failed:", error);
+                    showMessage('Erreur d\'authentification : ' + error.message, false);
+                }
+            }
+        });
+    } else {
+        console.error("Firebase config is missing. The app cannot initialize.");
+        showMessage("Erreur de configuration : Impossible de se connecter à la base de données.", false);
+    }
+    
     async function initFirebaseAndListen() {
         try {
-            await signInAnonymously(auth);
-            console.log("Signed in anonymously.");
-            const userId = auth.currentUser.uid;
-            console.log("User ID:", userId);
+            const userId = auth.currentUser?.uid || 'anonymous-user';
+            console.log("Using User ID:", userId);
 
             // This is the collection path. Using a public collection for this app.
             transactionsCollection = collection(db, "artifacts", appId, "public", "data", "transactions");
 
             // Set up real-time listener for transactions
-            onSnapshot(query(transactionsCollection, orderBy("date", "desc")), (snapshot) => {
+            onSnapshot(query(transactionsCollection), (snapshot) => {
                 const newTransactions = snapshot.docs.map(doc => ({
                     id: doc.id,
                     ...doc.data()
@@ -607,12 +626,11 @@
                 showMessage('Erreur de connexion : ' + error.message, false);
             });
         } catch (error) {
-            console.error("Anonymous sign-in failed:", error);
-            showMessage('Erreur d\'authentification : ' + error.message, false);
+            console.error("Error during initialization:", error);
+            showMessage('Erreur d\'initialisation : ' + error.message, false);
         }
     }
-    
-    initFirebaseAndListen();
+
     /* ---------- CUSTOM MODAL FUNCTIONS ---------- */
     const modal = document.getElementById('modal');
     const modalMessage = document.getElementById('modal-message');
@@ -739,7 +757,13 @@
             const monthTransactions = DATA.filter(t => {
                 const d = createUTCDate(t.date);
                 return d && d.getUTCFullYear() === y && d.getUTCMonth() === m;
-            }).sort((a, b) => createUTCDate(b.date) - createUTCDate(a.date));
+            }).sort((a, b) => {
+                // Sort by date descending, and then by createdAt descending for stable ordering
+                const dateA = new Date(a.date).getTime();
+                const dateB = new Date(b.date).getTime();
+                if (dateB !== dateA) return dateB - dateA;
+                return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+            });
 
             $('list').innerHTML = '';
 
@@ -983,12 +1007,14 @@
         }
         const confirmed = await showMessage('Supprimer la dernière transaction ?', true);
         if (confirmed) {
-            const lastTransaction = DATA[0];
-            try {
-                await deleteDoc(doc(db, transactionsCollection.path, lastTransaction.id));
-            } catch (e) {
-                console.error("Error deleting last transaction: ", e);
-                showMessage("Erreur lors de la suppression de la dernière transaction. Vérifiez les règles de sécurité Firestore.", false);
+            const lastTransaction = DATA.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
+            if (lastTransaction) {
+                 try {
+                    await deleteDoc(doc(db, transactionsCollection.path, lastTransaction.id));
+                } catch (e) {
+                    console.error("Error deleting last transaction: ", e);
+                    showMessage("Erreur lors de la suppression de la dernière transaction. Vérifiez les règles de sécurité Firestore.", false);
+                }
             }
         }
     };
@@ -997,7 +1023,7 @@
         const y = CUR_DATE.getFullYear(), m = CUR_DATE.getMonth();
         const transactionsToDelete = DATA.filter(t => {
             const d = createUTCDate(t.date);
-            return d && d.getUTCFull-Year() === y && d.getUTCMonth() === m;
+            return d && d.getUTCFullYear() === y && d.getUTCMonth() === m;
         });
 
         if (!transactionsToDelete.length) {
