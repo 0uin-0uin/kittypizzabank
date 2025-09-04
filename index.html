@@ -337,9 +337,69 @@
             background: #DC2626;
             transform: translateY(-1px);
         }
+        .delete-actions button:active {
+            transform: translateY(0);
+        }
         .chart-container {
             height: 250px;
             margin-top: 20px;
+        }
+        /* Style for the custom modal */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1000; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: var(--card-bg);
+            padding: 30px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .modal-message {
+            font-size: 1.1rem;
+            color: var(--text-color);
+        }
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        .modal-btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            border: none;
+            transition: background-color 0.2s ease;
+        }
+        .modal-btn-confirm {
+            background-color: var(--expense-color);
+            color: #fff;
+        }
+        .modal-btn-confirm:hover {
+            background-color: #DC2626;
+        }
+        .modal-btn-cancel {
+            background-color: var(--border-color);
+            color: var(--text-color);
+        }
+        .modal-btn-cancel:hover {
+            background-color: #D1D5DB;
         }
         @media (max-width: 900px) {
             .grid {
@@ -481,25 +541,100 @@
     </div>
 </div>
 
+<!-- Custom Modal UI for alerts and confirmations -->
+<div id="modal" class="modal">
+    <div class="modal-content">
+        <p id="modal-message" class="modal-message"></p>
+        <div id="modal-actions" class="modal-actions">
+            <button id="modal-btn-ok" class="modal-btn modal-btn-confirm">OK</button>
+            <button id="modal-btn-cancel" class="modal-btn modal-btn-cancel" style="display:none;">Annuler</button>
+        </div>
+    </div>
+</div>
+
 <script type="module">
     // START: Firebase SDK imports
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, collection, onSnapshot, addDoc, deleteDoc, query, orderBy, getDocs, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-    // END: Firebase SDK imports
+    import { getFirestore, collection, onSnapshot, addDoc, deleteDoc, query, orderBy, getDocs, doc, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { setLogLevel } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyA1fLyj-6OCXb8ef1n_dv9o_QzVzBXB9Ws",
-      authDomain: "kittypizzabank.firebaseapp.com",
-      projectId: "kittypizzabank",
-      storageBucket: "kittypizzabank.firebasestorage.app",
-      messagingSenderId: "904067134114",
-      appId: "1:904067134114:web:9c5e2135527a214618ddfb",
-      measurementId: "G-DLL44SY3YK"
-    };
+    setLogLevel('debug'); // Enable debug logging for Firebase
 
+    const __app_id = "default-app-id";
+    const __firebase_config = JSON.stringify({
+        apiKey: "AIzaSyA1fLyj-6OCXb8ef1n_dv9o_QzVzBXB9Ws",
+        authDomain: "kittypizzabank.firebaseapp.com",
+        projectId: "kittypizzabank",
+        storageBucket: "kittypizzabank.firebasestorage.app",
+        messagingSenderId: "904067134114",
+        appId: "1:904067134114:web:9c5e2135527a214618ddfb",
+        measurementId: "G-DLL44SY3YK"
+    });
+    const __initial_auth_token = "some-token";
+
+    const firebaseConfig = JSON.parse(__firebase_config);
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-    const transactionsCollection = collection(db, "transactions");
+    const auth = getAuth(app);
+    let transactionsCollection;
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+    /* ---------- AUTHENTICATION AND DATA LISTENER ---------- */
+    // Sign in anonymously to get a user ID, which is required by Firebase security rules
+    // if `request.auth != null` is used.
+    async function initFirebaseAndListen() {
+        try {
+            await signInAnonymously(auth);
+            console.log("Signed in anonymously.");
+            const userId = auth.currentUser.uid;
+            console.log("User ID:", userId);
+
+            // This is the collection path. Using a public collection for this app.
+            transactionsCollection = collection(db, "artifacts", appId, "public", "data", "transactions");
+
+            // Set up real-time listener for transactions
+            onSnapshot(query(transactionsCollection, orderBy("date", "desc")), (snapshot) => {
+                const newTransactions = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                DATA = newTransactions;
+                refreshAll();
+                console.log("Transactions data updated.");
+            }, (error) => {
+                console.error("Error listening to transactions:", error);
+                showMessage('Erreur de connexion : ' + error.message, false);
+            });
+        } catch (error) {
+            console.error("Anonymous sign-in failed:", error);
+            showMessage('Erreur d\'authentification : ' + error.message, false);
+        }
+    }
+    
+    initFirebaseAndListen();
+    /* ---------- CUSTOM MODAL FUNCTIONS ---------- */
+    const modal = document.getElementById('modal');
+    const modalMessage = document.getElementById('modal-message');
+    const modalOkBtn = document.getElementById('modal-btn-ok');
+    const modalCancelBtn = document.getElementById('modal-btn-cancel');
+
+    function showMessage(message, isConfirm = false) {
+        modalMessage.textContent = message;
+        modalOkBtn.textContent = isConfirm ? 'Oui' : 'OK';
+        modalCancelBtn.style.display = isConfirm ? 'inline-block' : 'none';
+        modal.style.display = 'flex';
+        return new Promise(resolve => {
+            modalOkBtn.onclick = () => {
+                modal.style.display = 'none';
+                resolve(true);
+            };
+            modalCancelBtn.onclick = () => {
+                modal.style.display = 'none';
+                resolve(false);
+            };
+        });
+    }
 
     /* ---------- CONFIGURATION AND UTILS ---------- */
     const EUR2USD = 1.08; 
@@ -521,6 +656,7 @@
     const fmt = n => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     
     const createUTCDate = dateStr => {
+      if (!dateStr) return null;
       const [year, month, day] = dateStr.split('-').map(Number);
       return new Date(Date.UTC(year, month - 1, day));
     };
@@ -541,12 +677,13 @@
     function buildCalendar() {
         try {
             const y = CUR_DATE.getFullYear(), m = CUR_DATE.getMonth();
-            $('mois').textContent = new Date(y, m).toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
+            $('mois').textContent = new Date(y, m).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long' });
             
             const firstDayOfMonth = new Date(y, m, 1);
             const startDay = new Date(firstDayOfMonth);
-            const dayOfWeek = startDay.getDay();
-            startDay.setDate(startDay.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+            let dayOfWeek = startDay.getDay();
+            if (dayOfWeek === 0) dayOfWeek = 7; // Make Sunday the 7th day
+            startDay.setDate(startDay.getDate() - (dayOfWeek - 1));
 
             $('cal').innerHTML = '';
 
@@ -568,7 +705,7 @@
 
                 const dayTransactions = DATA.filter(t => {
                     const transactionDate = createUTCDate(t.date);
-                    return transactionDate.getUTCFullYear() === day.getFullYear() && transactionDate.getUTCMonth() === day.getMonth() && transactionDate.getUTCDate() === day.getDate();
+                    return transactionDate && transactionDate.getUTCFullYear() === day.getFullYear() && transactionDate.getUTCMonth() === day.getMonth() && transactionDate.getUTCDate() === day.getDate();
                 });
                 
                 if (dayTransactions.length) {
@@ -601,7 +738,7 @@
             const y = CUR_DATE.getFullYear(), m = CUR_DATE.getMonth();
             const monthTransactions = DATA.filter(t => {
                 const d = createUTCDate(t.date);
-                return d.getUTCFullYear() === y && d.getUTCMonth() === m;
+                return d && d.getUTCFullYear() === y && d.getUTCMonth() === m;
             }).sort((a, b) => createUTCDate(b.date) - createUTCDate(a.date));
 
             $('list').innerHTML = '';
@@ -640,8 +777,8 @@
         }, {});
 
         const hasData = Object.keys(expensesByCategory).length > 0;
+        if (CHART) CHART.destroy();
         if (!hasData) {
-            ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
             return;
         }
 
@@ -671,6 +808,7 @@
         const balanceData = {};
         DATA.forEach(t => {
             const date = createUTCDate(t.date);
+            if (!date) return;
             const month = `${date.getUTCFullYear()}-${(date.getUTCMonth() + 1).toString().padStart(2, '0')}`;
             if (!balanceData[month]) {
                 balanceData[month] = 0;
@@ -684,6 +822,7 @@
             return acc;
         }, []);
 
+        if (CHART) CHART.destroy();
         CHART = new Chart(ctx, {
             type: 'line',
             data: {
@@ -714,17 +853,19 @@
         const monthlyData = {};
         DATA.forEach(t => {
             const date = createUTCDate(t.date);
+            if (!date) return;
             const month = `${date.getUTCFullYear()}-${(date.getUTCMonth() + 1).toString().padStart(2, '0')}`;
             if (!monthlyData[month]) {
                 monthlyData[month] = { income: 0, expense: 0 };
             }
-            monthlyData[month][t.type] += t.usd;
+            monthlyData[month][t.type] = (monthlyData[month][t.type] || 0) + t.usd;
         });
 
         const sortedMonths = Object.keys(monthlyData).sort();
         const incomes = sortedMonths.map(m => monthlyData[m].income);
         const expenses = sortedMonths.map(m => monthlyData[m].expense);
 
+        if (CHART) CHART.destroy();
         CHART = new Chart(ctx, {
             type: 'bar',
             data: {
@@ -744,30 +885,21 @@
             }
         });
     }
-
+    
     function refreshChart() {
-        try {
-            const ctx = $('chart').getContext('2d');
-            if (CHART) CHART.destroy();
+        const ctx = $('chart').getContext('2d');
+        const selectedChart = $('chartSelector').value;
 
-            const chartType = $('chartSelector').value;
-
-            switch (chartType) {
-                case 'expenses':
-                    renderExpensesChart(ctx);
-                    break;
-                case 'monthlyBalance':
-                    renderMonthlyBalanceChart(ctx);
-                    break;
-                case 'incomeVsExpense':
-                    renderIncomeVsExpenseChart(ctx);
-                    break;
-                default:
-                    renderExpensesChart(ctx);
-                    break;
-            }
-        } catch (e) {
-            console.error("Error refreshing chart:", e);
+        switch (selectedChart) {
+            case 'expenses':
+                renderExpensesChart(ctx);
+                break;
+            case 'monthlyBalance':
+                renderMonthlyBalanceChart(ctx);
+                break;
+            case 'incomeVsExpense':
+                renderIncomeVsExpenseChart(ctx);
+                break;
         }
     }
 
@@ -783,21 +915,14 @@
     }
     
     // START: Firebase logic
-    onSnapshot(query(transactionsCollection, orderBy("date", "desc")), (snapshot) => {
-        const newTransactions = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-        }));
-        DATA = newTransactions;
-        refreshAll();
-    });
-
     window.deleteTransaction = async (id) => {
-        if (confirm('Are you sure you want to delete this transaction?')) {
+        const confirmed = await showMessage('Voulez-vous vraiment supprimer cette transaction ?', true);
+        if (confirmed) {
             try {
-                await deleteDoc(doc(db, "transactions", id));
+                await deleteDoc(doc(db, transactionsCollection.path, id));
             } catch (e) {
                 console.error("Error deleting document: ", e);
+                showMessage("Erreur lors de la suppression de la transaction. Vérifiez les règles de sécurité Firestore.", false);
             }
         }
     };
@@ -809,7 +934,7 @@
         e.preventDefault();
 
         if (!$('desc').value || !$('mnt').value || !$('typ').value || !$('cur').value || !$('cat').value || !$('dat').value) {
-            alert("Please fill in all fields.");
+            showMessage("Veuillez remplir tous les champs.", false);
             return;
         }
 
@@ -836,29 +961,34 @@
             $('dat').value = `${year}-${month}-${day}`;
         } catch (e) {
             console.error("Error adding document: ", e);
+            showMessage("Erreur lors de l'ajout de la transaction. Vérifiez les règles de sécurité Firestore.", false);
         }
     });
 
     $('prev').onclick = () => {
         CUR_DATE.setMonth(CUR_DATE.getMonth() - 1);
+        refreshList();
         buildCalendar(); 
     };
     $('next').onclick = () => {
         CUR_DATE.setMonth(CUR_DATE.getMonth() + 1);
+        refreshList();
         buildCalendar(); 
     };
 
     $('delLast').onclick = async () => {
         if (!DATA.length) {
-            alert('There are no transactions to delete.');
+            showMessage('Il n\'y a aucune transaction à supprimer.', false);
             return;
         }
-        if (confirm('Delete the last transaction?')) {
+        const confirmed = await showMessage('Supprimer la dernière transaction ?', true);
+        if (confirmed) {
             const lastTransaction = DATA[0];
             try {
-                await deleteDoc(doc(db, "transactions", lastTransaction.id));
+                await deleteDoc(doc(db, transactionsCollection.path, lastTransaction.id));
             } catch (e) {
                 console.error("Error deleting last transaction: ", e);
+                showMessage("Erreur lors de la suppression de la dernière transaction. Vérifiez les règles de sécurité Firestore.", false);
             }
         }
     };
@@ -867,42 +997,43 @@
         const y = CUR_DATE.getFullYear(), m = CUR_DATE.getMonth();
         const transactionsToDelete = DATA.filter(t => {
             const d = createUTCDate(t.date);
-            return d.getUTCFullYear() === y && d.getUTCMonth() === m;
+            return d && d.getUTCFull-Year() === y && d.getUTCMonth() === m;
         });
 
         if (!transactionsToDelete.length) {
-            alert('No transactions found for the current month.');
+            showMessage('Aucune transaction trouvée pour le mois en cours.', false);
             return;
         }
-        if (confirm(`Delete ${transactionsToDelete.length} transaction(s) from this month?`)) {
-            const querySnapshot = await getDocs(transactionsCollection);
-            const batch = db.batch();
-            querySnapshot.forEach((d) => {
-                const date = createUTCDate(d.data().date);
-                if (date.getUTCFullYear() === y && date.getUTCMonth() === m) {
-                    batch.delete(d.ref);
-                }
-            });
+        const confirmed = await showMessage(`Supprimer les ${transactionsToDelete.length} transaction(s) de ce mois ?`, true);
+        if (confirmed) {
             try {
+                const batch = writeBatch(db);
+                transactionsToDelete.forEach((d) => {
+                    batch.delete(doc(db, transactionsCollection.path, d.id));
+                });
                 await batch.commit();
             } catch (e) {
                 console.error("Error deleting month transactions: ", e);
+                showMessage("Erreur lors de la suppression des transactions du mois. Vérifiez les règles de sécurité Firestore.", false);
             }
         }
     };
 
     $('reset').onclick = async () => {
-        if (confirm('Are you absolutely sure you want to delete ALL your budget data? This action cannot be undone.')) {
-            if (confirm('Seriously? All data will be lost.')) {
-                const querySnapshot = await getDocs(transactionsCollection);
-                const batch = db.batch();
-                querySnapshot.forEach((d) => {
-                    batch.delete(d.ref);
-                });
+        const confirmed = await showMessage('Êtes-vous absolument sûr de vouloir supprimer TOUTES vos données de budget ? Cette action est irréversible.', true);
+        if (confirmed) {
+            const reconfirmed = await showMessage('Vraiment ? Toutes les données seront perdues.', true);
+            if (reconfirmed) {
                 try {
+                    const querySnapshot = await getDocs(transactionsCollection);
+                    const batch = writeBatch(db);
+                    querySnapshot.forEach((d) => {
+                        batch.delete(doc(db, transactionsCollection.path, d.id));
+                    });
                     await batch.commit();
                 } catch (e) {
                     console.error("Error resetting all data: ", e);
+                    showMessage("Erreur lors de la réinitialisation de toutes les données. Vérifiez les règles de sécurité Firestore.", false);
                 }
             }
         }
@@ -917,6 +1048,9 @@
       const day = today.getDate().toString().padStart(2, '0');
       $('dat').value = `${year}-${month}-${day}`;
     });
+    
+    // Initial calls
+    refreshAll();
 </script>
 </body>
 </html>
