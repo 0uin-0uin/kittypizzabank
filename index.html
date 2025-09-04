@@ -1,95 +1,282 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Budget – Step-by-Step Debug</title>
-  <style>
-    body{font-family:system-ui;background:#f5f5f5;padding:30px}
-    .card{background:#fff;border-radius:12px;padding:20px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,.1)}
-    h1{text-align:center}
-    .debug{background:#fef3c7;border:1px solid #f59e0b;border-radius:8px;padding:10px;margin-bottom:15px;font-size:.9rem;color:#92400e}
-    input,select{width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;margin-bottom:10px}
-    button{padding:10px;background:#6366f1;color:#fff;border:none;border-radius:8px;cursor:pointer}
-    button:hover{background:#4f46e5}
-    .hidden{display:none}
-  </style>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Budget + Calendar + Chart</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root{--p:#6366f1;--g:#10b981;--r:#ef4444;--b:#f5f5f5}
+    *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+    body{background:var(--b);padding:20px;color:#1f2937}
+    .card{background:#fff;border-radius:12px;padding:20px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+    h1{text-align:center;margin-bottom:20px;font-weight:600;font-size:1.5rem}
+    .sum{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+    .sum div{text-align:center;padding:14px;border-radius:8px;color:#fff;font-weight:600}
+    .sum div h3{font-size:.75rem;opacity:.9;font-weight:400}
+    .sum .i{background:var(--g)}.sum .e{background:var(--r)}.sum .t{background:var(--p)}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+    form{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    input,select{width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:1rem}
+    button{grid-column:1/-1;padding:10px;background:var(--p);color:#fff;border:none;border-radius:8px;font-size:1rem;cursor:pointer}
+    button:hover{background:#4f46e5}
+    .cal-nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+    .cal-nav button{width:auto;padding:6px 12px;background:#e5e7eb;color:#111}
+    .cal-nav button:hover{background:#d1d5db}
+    .month-display{font-size:1.25rem;font-weight:600}
+    .cal-head,.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}
+    .cal-head{font-size:.75rem;font-weight:600;color:#6b7280;margin-bottom:4px}
+    .cal-day{aspect-ratio:1/1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:8px;font-size:.875rem;cursor:pointer;position:relative}
+    .cal-day:hover{background:#f3f4f6}
+    .cal-day.today{background:var(--p);color:#fff;font-weight:700}
+    .cal-day.other-month{color:#d1d5db}
+    .dots{position:absolute;bottom:4px;display:flex;gap:2px}
+    .dot{width:3px;height:3px;border-radius:50%}
+    .dot.income{background:var(--g)}.dot.expense{background:var(--r)}
+    .list{max-height:280px;overflow-y:auto}
+    .item{display:flex;justify-content:space-between;align-items:center;padding:10px;border-bottom:1px solid #eee}
+    .item:last-child{border-bottom:none}
+    .item:hover .del{opacity:1}
+    .del{background:var(--r);color:#fff;border:none;width:20px;height:20px;border-radius:50%;cursor:pointer;font-size:14px;line-height:1;opacity:0;transition:.2s}
+    .amt.income{color:var(--g)}.amt.expense{color:var(--r)}
+    .del-zone{background:#fef2f2;border:1px dashed #fca5a5;border-radius:8px;padding:12px;text-align:center}
+    .del-zone h4{color:#b91c1c;margin-bottom:8px;font-size:.9rem}
+    .del-actions{display:flex;gap:8px}
+    .del-actions button{background:var(--r);font-size:.8rem;padding:6px}
+    .del-actions button:hover{background:#dc2626}
+    .chart-container{height:200px;margin-top:10px}
+    @media(max-width:700px){.grid{grid-template-columns:1fr}.sum{grid-template-columns:1fr}}
+  </style>
 </head>
 <body>
 
-<div class="card">
-  <h1>🔍 Step-by-Step Debug</h1>
+<div class="container">
+    <div class="card">
+    <h1>💰 Budget + Calendar + Chart</h1>
+    <div class="sum">
+      <div class="i"><h3>Income</h3><span id="inc">$0.00</span></div>
+      <div class="e"><h3>Expenses</h3><span id="exp">$0.00</span></div>
+      <div class="t"><h3>Balance</h3><span id="sol">$0.00</span></div>
+    </div>
+  </div>
 
-  <!-- DEBUG BAR -->
-  <div id="debug" class="debug"></div>
+    <div class="grid">
+    <div class="card">
+      <h2>Add transaction</h2>
+      <form id="form">
+        <input id="desc" type="text" placeholder="Description" required>
+        <input id="mnt" type="number" step="0.01" placeholder="Amount" required>
+        <select id="typ" required><option value="">Type</option><option value="income">Income</option><option value="expense">Expense</option></select>
+        <select id="cur" required><option value="">Currency</option><option value="EUR">EUR</option><option value="USD">USD</option></select>
+        <select id="cat" required><option value="">Category</option><option value="salary">Salary</option><option value="food">Food</option><option value="housing">Housing</option><option value="transport">Transport</option><option value="other">Other</option></select>
+        <input id="dat" type="date" required>
+        <button type="submit">Add</button>
+      </form>
+    </div>
 
-  <!-- ULTRA-SIMPLE FORM -->
-  <form id="form">
-    <input id="desc" type="text" placeholder="Description" required>
-    <input id="mnt" type="number" step="0.01" placeholder="Amount" required>
-    <button type="submit">Save</button>
-  </form>
+    <div class="card">
+      <div class="cal-nav">
+        <button id="prev">‹</button><div class="month-display" id="mois"></div><button id="next">›</button>
+      </div>
+      <div class="cal-head"><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div><div>Sun</div></div>
+      <div id="cal" class="cal"></div>
+    </div>
+  </div>
 
-  <!-- RESULT -->
-  <p id="out"></p>
-</div>
+    <div class="grid">
+    <div class="card"><h2>This month transactions</h2><div id="list" class="list"></div></div>
+    <div class="card">
+      <h2>Expense breakdown</h2>
+      <div class="chart-container"><canvas id="chart"></canvas></div>
+    </div>
+  </div>
 
-<div class="card">
-  <h2>What I saved (localStorage)</h2>
-  <pre id="storage"></pre>
+    <div class="card del-zone">
+    <h4>🗑️ Delete data</h4>
+    <div class="del-actions">
+      <button id="delLast">Delete last</button>
+      <button id="delMonth">Delete month</button>
+      <button id="reset">Reset all</button>
+    </div>
+  </div>
 </div>
 
 <script>
+/* ---------- CONFIG ---------- */
+const EUR2USD = 1.08;
+let DATA = JSON.parse(localStorage.getItem('budgetEn')) || [];
+let CUR_DATE = new Date();
+let CHART;
+
 /* ---------- UTILS ---------- */
 const $ = id => document.getElementById(id);
-const debug = msg => {
-  $('debug').textContent = msg;
-  console.log('[DEBUG]', msg);
+const save = () => localStorage.setItem('budgetEn', JSON.stringify(DATA));
+const fmt = n => n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+/* ---------- TOTALS ---------- */
+function refreshTotals(){
+  const inc = DATA.filter(t => t.type === 'income').reduce((s, t) => s + t.usd, 0);
+  const exp = DATA.filter(t => t.type === 'expense').reduce((s, t) => s + t.usd, 0);
+  $('inc').textContent = '$' + fmt(inc);
+  $('exp').textContent = '$' + fmt(exp);
+  $('sol').textContent = '$' + fmt(inc - exp);
+}
+
+/* ---------- CALENDAR ---------- */
+function buildCalendar(){
+  const y = CUR_DATE.getFullYear(), m = CUR_DATE.getMonth();
+  $('mois').textContent = new Date(y, m).toLocaleDateString('en-US', {year: 'numeric', month: 'long'});
+  const first = new Date(y, m, 1), last = new Date(y, m + 1, 0);
+  const start = new Date(first); start.setDate(start.getDate() - first.getDay() + 1);
+  $('cal').innerHTML = '';
+  for (let i = 0; i < 42; i++) {
+    const d = new Date(start); d.setDate(start.getDate() + i);
+    const dayDiv = document.createElement('div'); dayDiv.className = 'cal-day'; dayDiv.textContent = d.getDate();
+    if (d.getMonth() !== m) dayDiv.classList.add('other-month');
+    if (d.toDateString() === new Date().toDateString()) dayDiv.classList.add('today');
+    const dayTrans = DATA.filter(t => new Date(t.date).toDateString() === d.toDateString());
+    if (dayTrans.length) {
+      const dots = document.createElement('div'); dots.className = 'dots';
+      if (dayTrans.some(t => t.type === 'income')) {
+        const dot = document.createElement('div'); dot.className = 'dot income'; dots.appendChild(dot);
+      }
+      if (dayTrans.some(t => t.type === 'expense')) {
+        const dot = document.createElement('div'); dot.className = 'dot expense'; dots.appendChild(dot);
+      }
+      dayDiv.appendChild(dots);
+    }
+    dayDiv.addEventListener('click', () => { $('dat').valueAsDate = d; });
+    $('cal').appendChild(dayDiv);
+  }
+}
+
+/* ---------- MONTH LIST ---------- */
+function refreshList(){
+  const y = CUR_DATE.getFullYear(), m = CUR_DATE.getMonth();
+  const monthTrans = DATA.filter(t => {
+    const d = new Date(t.date);
+    return d.getFullYear() === y && d.getMonth() === m;
+  }).sort((a, b) => new Date(b.date) - new Date(a.date));
+  $('list').innerHTML = '';
+  if (!monthTrans.length) {
+    $('list').innerHTML = '<p style="text-align:center;color:#9ca3af">No transactions this month</p>';
+    return;
+  }
+  monthTrans.forEach(t => {
+    const div = document.createElement('div'); div.className = 'item';
+    div.innerHTML = `
+      <div><strong>${t.desc}</strong><br><small>${t.cat} • ${new Date(t.date).toLocaleDateString('en-US')}</small></div>
+      <div style="text-align:right"><div class="amt ${t.type}">${t.amt} ${t.cur}</div><small>$${fmt(t.usd)}</small></div>
+      <button class="del" onclick="delTrans(${t.id})">×</button>`;
+    $('list').appendChild(div);
+  });
+}
+
+/* ---------- CHART ---------- */
+function refreshChart(){
+  const ctx = $('chart').getContext('2d');
+  if (CHART) CHART.destroy();
+  const exp = DATA.filter(t => t.type === 'expense').reduce((a, t) => {
+    a[t.cat] = (a[t.cat] || 0) + t.usd;
+    return a;
+  }, {});
+  if (!Object.keys(exp).length) {
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    return;
+  }
+  CHART = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: Object.keys(exp),
+      datasets: [{
+        data: Object.values(exp),
+        backgroundColor: ['#6366f1','#8b5cf6','#ec4899','#f59e0b','#10b981']
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false
+    }
+  });
+}
+
+/* ---------- DELETE ---------- */
+window.delTrans = id => {
+  if (confirm('Delete this transaction?')) {
+    DATA = DATA.filter(t => t.id !== id);
+    save();
+    refreshAll();
+  }
 };
-
-/* ---------- LOAD ---------- */
-function loadStorage() {
-  const raw = localStorage.getItem('budgetDebug');
-  $('storage').textContent = raw || 'rien';
-  debug('Loaded : ' + (raw || 'vide'));
-}
-
-/* ---------- SAVE ---------- */
-function saveToStorage(obj) {
-  debug('Saving → ' + JSON.stringify(obj));
-  localStorage.setItem('budgetDebug', JSON.stringify(obj));
-  debug('✅ Saved in localStorage');
-  loadStorage();
-}
+$('delLast').onclick = () => {
+  if (!DATA.length) {
+    alert('No transaction to delete.');
+    return;
+  }
+  if (confirm('Delete the last transaction?')) {
+    DATA.pop();
+    save();
+    refreshAll();
+  }
+};
+$('delMonth').onclick = () => {
+  const y = CUR_DATE.getFullYear(), m = CUR_DATE.getMonth();
+  const toDel = DATA.filter(t => {
+    const d = new Date(t.date);
+    return d.getFullYear() === y && d.getMonth() === m;
+  });
+  if (!toDel.length) {
+    alert('This month is empty.');
+    return;
+  }
+  if (confirm(`Delete ${toDel.length} transaction(s) from this month?`)) {
+    DATA = DATA.filter(t => !toDel.includes(t));
+    save();
+    refreshAll();
+  }
+};
+$('reset').onclick = () => {
+  if (confirm('Delete all data permanently?')) {
+    if (confirm('Are you absolutely sure? This action cannot be undone.')) {
+      DATA = [];
+      save();
+      refreshAll();
+    }
+  }
+};
 
 /* ---------- FORM ---------- */
 $('form').addEventListener('submit', e => {
-  e.preventDefault();
-
-  const desc = $('desc').value.trim();
-  const mnt = $('mnt').value;
-
-  debug('Raw amount = ' + mnt);
-
-  const amt = parseFloat(mnt);
-  if (isNaN(amt) || amt <= 0) {
-    debug('❌ Amount invalide');
-    return;
-  }
-
-  const obj = { id: Date.now(), desc, amt };
-  debug('Objet prêt → ' + JSON.stringify(obj));
-
-  saveToStorage(obj);
-
-  $('out').textContent = 'Dernière transaction : ' + desc + ' = $' + amt.toFixed(2);
-
-  // reset
-  e.target.reset();
+  e.preventDefault();
+  const usd = $('cur').value === 'USD' ? +$('mnt').value : +($('mnt').value * EUR2USD);
+  DATA.push({
+    id: Date.now(),
+    desc: $('desc').value,
+    amt: +$('mnt').value,
+    cur: $('cur').value,
+    type: $('typ').value, // Fix: Changed 'typ' to 'type'
+    cat: $('cat').value,
+    date: $('dat').value,
+    usd
+  });
+  save();
+  refreshAll();
+  e.target.reset();
+  $('dat').valueAsDate = new Date();
 });
 
+/* ---------- CAL NAV ---------- */
+$('prev').onclick = () => { CUR_DATE.setMonth(CUR_DATE.getMonth() - 1); refreshAll(); };
+$('next').onclick = () => { CUR_DATE.setMonth(CUR_DATE.getMonth() + 1); refreshAll(); };
+
 /* ---------- BOOT ---------- */
-loadStorage();
+function refreshAll(){
+  refreshTotals();
+  buildCalendar();
+  refreshList();
+  refreshChart();
+}
+refreshAll();
 </script>
 </body>
 </html>
