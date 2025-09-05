@@ -263,31 +263,23 @@
     const nextMonthBtn = document.getElementById('nextMonthBtn');
     const musicToggleBtn = document.getElementById('musicToggleBtn');
 
-    // The hardcoded password for the app.
+    // Le mot de passe pour l'application, codé en dur.
     const PASSWORD = "@Neige2025";
     
-    // Use global configuration variables for the preview,
-    // or use your deployment configuration if you have one.
-    // REPLACE the contents of the object below with your own Firebase config.
+    // VOTRE CONFIGURATION FIREBASE
     const firebaseConfig = {
-  apiKey: "AIzaSyA1fLyj-6OCXb8ef1n_dv9o_QzVzBXB9Ws",
-  authDomain: "kittypizzabank.firebaseapp.com",
-  projectId: "kittypizzabank",
-  storageBucket: "kittypizzabank.firebasestorage.app",
-  messagingSenderId: "904067134114",
-  appId: "1:904067134114:web:9c5e2135527a214618ddfb",
-  measurementId: "G-DLL44SY3YK"
-};
-    
+        apiKey: "AIzaSyA1fLyj-6OCXb8ef1n_dv9o_QzVzBXB9Ws",
+        authDomain: "kittypizzabank.firebaseapp.com",
+        projectId: "kittypizzabank",
+        storageBucket: "kittypizzabank.firebasestorage.app",
+        messagingSenderId: "904067134114",
+        appId: "1:904067134114:web:9c5e2135527a214618ddfb",
+        measurementId: "G-DLL44SY3YK"
+    };
+
     // The appId is also specific to the Gemini environment; you can replace it
     // with your own name if you don't intend to share it.
-    const appIdFromGemini = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-
-    const firebaseConfig = Object.keys(firebaseConfigForDeployment).length > 0
-        ? firebaseConfigForDeployment
-        : JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-
-    const appId = appIdFromGemini;
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
     // Firebase Initialization
     function initializeFirebase() {
@@ -371,6 +363,9 @@
             }
             
             statusMessage.textContent = "Connexion à Firebase...";
+            statusMessage.classList.remove('text-red-300');
+            statusMessage.classList.add('text-gray-300');
+
             try {
                 // Now signing in anonymously is the default and only method.
                 await signInAnonymously(auth);
@@ -386,11 +381,14 @@
             } catch (error) {
                 console.error("Error during authentication:", error);
                 statusMessage.textContent = "Échec de la connexion. Veuillez réessayer.";
+                statusMessage.classList.remove('text-gray-300');
+                statusMessage.classList.add('text-red-300');
             }
 
         } else {
-            statusMessage.textContent = "Incantation incorrecte.";
-            setTimeout(() => statusMessage.textContent = '', 2000);
+            statusMessage.textContent = "Incantation incorrecte. Veuillez vérifier le mot de passe.";
+            statusMessage.classList.remove('text-gray-300');
+            statusMessage.classList.add('text-red-300');
         }
     }
     
