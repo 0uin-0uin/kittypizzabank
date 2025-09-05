@@ -354,6 +354,9 @@
 
     // Handle authentication and view switching
     async function handleLogin() {
+        // Debugging line to see the entered password
+        console.log("Password entered:", passwordInput.value);
+
         if (passwordInput.value === PASSWORD) {
             // Only initialize Firebase after the password is correct
             if (!initializeFirebase()) {
