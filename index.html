@@ -1,83 +1,274 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Magic Budget ✨</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body {
-      font-family: system-ui, sans-serif;
-      background: #f4f4f8;
-      margin: 0;
-      padding: 2rem;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    h1 {
-      color: #4a148c;
-      margin-bottom: 1rem;
-    }
-    form {
-      display: flex;
-      gap: 0.5rem;
-      margin-bottom: 1rem;
-    }
-    input, button {
-      padding: 0.5rem;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      font-size: 1rem;
-    }
-    button {
-      background: #4a148c;
-      color: white;
-      cursor: pointer;
-      border: none;
-    }
-    button:hover {
-      background: #6a1b9a;
-    }
-    ul {
-      list-style: none;
-      padding: 0;
-      width: 100%;
-      max-width: 400px;
-    }
-    li {
-      background: white;
-      margin: 0.5rem 0;
-      padding: 0.75rem;
-      border-radius: 10px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    .delete {
-      background: none;
-      border: none;
-      color: #d32f2f;
-      font-weight: bold;
-      cursor: pointer;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Magic Budget App</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js for graphs -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Tone.js for background music -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+    <!-- Font: Cormorant Garamond for whimsical readability -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Cormorant Garamond', serif;
+            background-color: #0b0b2e; /* A deeper night blue */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 1rem;
+            transition: background-color 0.5s ease;
+        }
+        .container {
+            max-width: 28rem;
+            width: 100%;
+        }
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 0.25rem;
+        }
+        .calendar-cell {
+            padding: 0.5rem 0;
+            text-align: center;
+            font-size: 0.875rem;
+            border-radius: 0.5rem;
+            transition: background-color 0.2s ease;
+        }
+        .calendar-header {
+            font-weight: bold;
+            color: #d1d5db;
+        }
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            height: 1.5rem;
+            width: 1.5rem;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        /* Vintage 2000s blog style hints */
+        .login-box {
+            background-color: #1a203f;
+            border-color: #3b82f6;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3), 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+        .fade-in-pulse {
+            animation: fadeInPulse 2s ease-out forwards;
+        }
+        @keyframes fadeInPulse {
+            0% { opacity: 0; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1.1); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+    </style>
 </head>
-<body>
-  <h1>✨ Magic Budget ✨</h1>
-  <form id="transaction-form">
-    <input type="text" id="desc" placeholder="Description" required>
-    <input type="number" id="amount" placeholder="Montant (€)" required>
-    <button type="submit">Ajouter</button>
-  </form>
-  <ul id="transactions"></ul>
+<body class="bg-[#0b0b2e]">
 
-  <script type="module">
+<!-- Écran de connexion -->
+<div id="loginScreen" class="container login-box text-white p-8 rounded-xl border-2 text-center">
+    <div class="text-6xl mb-4 fade-in-pulse">🧙‍♂️</div>
+    <h1 class="text-3xl font-bold mb-2">Greetings, wanderer Matt.</h1>
+    <p class="text-gray-300 mb-6 leading-relaxed">
+        A whisper on the aether hums a secret song, calling to those who seek order in the realm of chaos. 
+        Before you lies the enchanted ledger of our very own magical economy. 
+        Within its pages, every coin holds a spell, and every spell, a story. 
+        Enter the ancient password to unseal this grimoire and begin our journey.
+    </p>
+    <div class="flex flex-col items-center space-y-4">
+        <input type="password" id="passwordInput" placeholder="Enter password" class="w-full px-4 py-2 text-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <button id="loginBtn" class="w-full bg-blue-500 text-white font-bold py-2 rounded-lg hover:bg-blue-600 transition duration-200 ease-in-out shadow-md">Open the Grimoire</button>
+    </div>
+    <div id="statusMessage" class="text-sm mt-4 h-6 text-gray-300"></div>
+</div>
+
+<!-- Écran de l'application de budget -->
+<div id="budgetApp" class="container bg-purple-900 text-white p-8 rounded-xl shadow-lg border-2 border-purple-600 hidden">
+    <h1 class="text-3xl font-bold text-center mb-2">✨ Magic Budget Grimoire 🔮 📖</h1>
+    <p class="text-gray-300 text-center mb-6">Track your magical expenditures and spellbound savings.</p>
+
+    <!-- Affichage de l'ID utilisateur pour le partage -->
+    <div class="mb-6 bg-purple-800 p-4 rounded-lg shadow-inner text-sm text-center">
+        <span class="font-bold text-gray-400">Votre ID Magique:</span>
+        <span id="userIdDisplay" class="font-mono text-yellow-300 break-all"></span>
+    </div>
+
+    <!-- Sommaire du solde -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 text-center">
+        <div class="bg-purple-800 p-4 rounded-lg shadow-inner">
+            <h3 class="text-sm font-bold text-gray-400">Total Balance</h3>
+            <p id="totalBalance" class="text-2xl font-bold text-yellow-300 mt-1">$0.00</p>
+        </div>
+        <div class="bg-purple-800 p-4 rounded-lg shadow-inner">
+            <h3 class="text-sm font-bold text-gray-400">Total Income</h3>
+            <p id="totalIncome" class="text-2xl font-bold text-green-300 mt-1">$0.00</p>
+        </div>
+        <div class="bg-purple-800 p-4 rounded-lg shadow-inner">
+            <h3 class="text-sm font-bold text-gray-400">Total Expenses</h3>
+            <p id="totalExpenses" class="text-2xl font-bold text-red-300 mt-1">$0.00</p>
+        </div>
+    </div>
+
+    <!-- Formulaire d'ajout de transaction -->
+    <div class="mb-6">
+        <h3 class="text-xl font-bold mb-3">Add a Transaction</h3>
+        <div class="space-y-4">
+            <div>
+                <label for="descriptionInput" class="block text-sm font-medium text-gray-300 mb-1">Description</label>
+                <input type="text" id="descriptionInput" class="w-full px-4 py-2 text-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label for="amountInput" class="block text-sm font-medium text-gray-300 mb-1">Amount ($)</label>
+                    <input type="number" id="amountInput" class="w-full px-4 py-2 text-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                </div>
+                <div>
+                    <label for="typeInput" class="block text-sm font-medium text-gray-300 mb-1">Type</label>
+                    <select id="typeInput" class="w-full px-4 py-2 text-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                        <option value="expense">Expense</option>
+                        <option value="income">Income</option>
+                    </select>
+                </div>
+            </div>
+            <!-- Champ de date -->
+            <div>
+                <label for="dateInput" class="block text-sm font-medium text-gray-300 mb-1">Date</label>
+                <input type="date" id="dateInput" class="w-full px-4 py-2 text-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+            </div>
+            <!-- Conteneur de catégorie - maintenant toujours visible par défaut -->
+            <div id="categoryContainer">
+                <label for="categoryInput" class="block text-sm font-medium text-gray-300 mb-1">Category</label>
+                <select id="categoryInput" class="w-full px-4 py-2 text-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    <option value="Travel">Travel</option>
+                    <option value="Food">Food</option>
+                    <option value="Hobbies">Hobbies</option>
+                    <option value="Work">Work</option>
+                    <option value="Finances">Finances</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            <button id="addTransactionBtn" class="w-full bg-purple-500 text-white font-bold py-2 rounded-lg hover:bg-purple-600 transition duration-200 ease-in-out shadow-md">Cast Spell</button>
+        </div>
+    </div>
+
+    <!-- Calendrier -->
+    <div class="mb-6 bg-purple-800 p-4 rounded-lg border border-purple-700">
+        <h3 class="text-xl font-bold mb-3 text-center">Magical Calendar</h3>
+        <div class="flex justify-between items-center mb-4">
+            <button id="prevMonthBtn" class="text-gray-400 hover:text-white transition duration-200 ease-in-out">&lt;</button>
+            <span id="monthYearDisplay" class="text-lg font-bold"></span>
+            <button id="nextMonthBtn" class="text-gray-400 hover:text-white transition duration-200 ease-in-out">&gt;</button>
+        </div>
+        <div class="calendar-grid text-gray-300">
+            <div class="calendar-header">Sun</div>
+            <div class="calendar-header">Mon</div>
+            <div class="calendar-header">Tue</div>
+            <div class="calendar-header">Wed</div>
+            <div class="calendar-header">Thu</div>
+            <div class="calendar-header">Fri</div>
+            <div class="calendar-header">Sat</div>
+        </div>
+        <div id="calendarGrid" class="calendar-grid mt-2"></div>
+    </div>
+
+    <!-- Graphiques -->
+    <div class="mb-6 bg-purple-800 p-4 rounded-lg border border-purple-700">
+        <h3 class="text-xl font-bold mb-3 text-center">Budget Visuals</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-purple-900 p-3 rounded-lg">
+                <h4 class="text-sm font-bold text-gray-400 mb-2">Income vs Expenses</h4>
+                <canvas id="balanceChart"></canvas>
+            </div>
+            <div class="bg-purple-900 p-3 rounded-lg">
+                <h4 class="text-sm font-bold text-gray-400 mb-2">Expenses by Category</h4>
+                <canvas id="categoryChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Historique des transactions -->
+    <div>
+        <h3 class="text-xl font-bold mb-3">Transaction History</h3>
+        <ul id="transactionList" class="space-y-3 bg-purple-800 p-4 rounded-lg border border-purple-700">
+            <li class="text-center text-gray-400 italic">No transactions yet.</li>
+        </ul>
+    </div>
+    
+    <!-- Bouton de contrôle de la musique -->
+    <div class="text-center mt-6">
+      <button id="musicToggleBtn" class="bg-gray-700 text-white font-bold py-2 px-4 rounded-full hover:bg-gray-800 transition duration-200 ease-in-out">♫ Play Ambiance</button>
+    </div>
+</div>
+
+<!-- Firebase SDKs -->
+<script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, onSnapshot, collection, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    // ⚡️ Ta config Firebase (à remplacer par la tienne depuis Firebase Console)
+    setLogLevel('debug');
+
+    // Global Firebase variables
+    let db;
+    let auth;
+    let userId;
+    
+    // Music variables
+    let musicPlaying = false;
+    let synth;
+    let reverb;
+    let musicLoop; // Variable for the music loop
+
+    // Chart and calendar variables
+    let balanceChart, categoryChart;
+    let currentMonth, currentYear;
+    let transactionDates = new Set();
+    const categoryEmojis = {
+        'Travel': '✈️', 'Food': '🍔', 'Hobbies': '🎨',
+        'Work': '💼', 'Finances': '💰', 'Other': '❓'
+    };
+
+    // UI elements
+    const loginScreen = document.getElementById('loginScreen');
+    const budgetApp = document.getElementById('budgetApp');
+    const passwordInput = document.getElementById('passwordInput');
+    const loginBtn = document.getElementById('loginBtn');
+    const statusMessage = document.getElementById('statusMessage');
+    const userIdDisplay = document.getElementById('userIdDisplay');
+    const descriptionInput = document.getElementById('descriptionInput');
+    const amountInput = document.getElementById('amountInput');
+    const typeInput = document.getElementById('typeInput');
+    const categoryInput = document.getElementById('categoryInput');
+    const dateInput = document.getElementById('dateInput');
+    const addTransactionBtn = document.getElementById('addTransactionBtn');
+    const totalBalanceEl = document.getElementById('totalBalance');
+    const totalIncomeEl = document.getElementById('totalIncome');
+    const totalExpensesEl = document.getElementById('totalExpenses');
+    const transactionList = document.getElementById('transactionList');
+    const monthYearDisplay = document.getElementById('monthYearDisplay');
+    const calendarGrid = document.getElementById('calendarGrid');
+    const prevMonthBtn = document.getElementById('prevMonthBtn');
+    const nextMonthBtn = document.getElementById('nextMonthBtn');
+    const musicToggleBtn = document.getElementById('musicToggleBtn');
+
+    // The hardcoded password for the app.
+    const PASSWORD = "@Neige2025";
+    
+    // Use global configuration variables for the preview,
+    // or use your deployment configuration if you have one.
+    // REPLACE the contents of the object below with your own Firebase config.
     const firebaseConfig = {
   apiKey: "AIzaSyA1fLyj-6OCXb8ef1n_dv9o_QzVzBXB9Ws",
   authDomain: "kittypizzabank.firebaseapp.com",
@@ -87,51 +278,458 @@
   appId: "1:904067134114:web:9c5e2135527a214618ddfb",
   measurementId: "G-DLL44SY3YK"
 };
+    
+    // The appId is also specific to the Gemini environment; you can replace it
+    // with your own name if you don't intend to share it.
+    const appIdFromGemini = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
-    // 🚀 Initialiser Firebase
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const auth = getAuth(app);
+    const firebaseConfig = Object.keys(firebaseConfigForDeployment).length > 0
+        ? firebaseConfigForDeployment
+        : JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
 
-    // 👤 Connexion anonyme
-    signInAnonymously(auth)
-      .then(() => console.log("✅ Connecté en anonyme"))
-      .catch((err) => console.error("❌ Erreur auth anonyme :", err));
+    const appId = appIdFromGemini;
 
-    // Référence à ta collection Firestore
-    const transactionsRef = collection(db, "artifacts/demoApp/public/data/magic_budget");
+    // Firebase Initialization
+    function initializeFirebase() {
+        if (Object.keys(firebaseConfig).length === 0) {
+            console.error("Firebase config is not available.");
+            statusMessage.textContent = "Erreur: App configuration missing.";
+            return false;
+        }
 
-    // 🎯 Gestion du formulaire
-    const form = document.getElementById("transaction-form");
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const desc = document.getElementById("desc").value;
-      const amount = parseFloat(document.getElementById("amount").value);
-      try {
-        await addDoc(transactionsRef, { desc, amount, created: Date.now() });
-        form.reset();
-      } catch (err) {
-        console.error("Erreur ajout transaction :", err);
-      }
-    });
+        try {
+            const app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+            return true;
+        } catch (error) {
+            console.error("Error initializing Firebase:", error);
+            statusMessage.textContent = "Erreur d'initialisation de l'application.";
+            return false;
+        }
+    }
 
-    // 📡 Affichage en live des transactions
-    const list = document.getElementById("transactions");
-    onSnapshot(transactionsRef, (snapshot) => {
-      list.innerHTML = "";
-      snapshot.forEach((docSnap) => {
-        const data = docSnap.data();
-        const li = document.createElement("li");
-        li.innerHTML = `
-          <span>${data.desc} — ${data.amount} €</span>
-          <button class="delete">✕</button>
-        `;
-        li.querySelector(".delete").addEventListener("click", () => {
-          deleteDoc(doc(db, "artifacts/demoApp/public/data/magic_budget", docSnap.id));
+    // Function to set up UI and listeners after successful login
+    function startApp() {
+        if (!db || !auth) {
+            console.error("Firebase services are not ready.");
+            statusMessage.textContent = "Erreur: La base de données n'est pas prête. Veuillez réessayer.";
+            return;
+        }
+        
+        // This is where all the UI and database interaction code lives
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                userId = user.uid;
+                userIdDisplay.textContent = userId;
+                console.log("User authenticated with UID:", userId);
+                statusMessage.textContent = "Connecté!";
+                
+                addTransactionBtn.addEventListener('click', addTransaction);
+                listenForTransactions();
+                setupCharts();
+                
+                const today = new Date();
+                currentMonth = today.getMonth();
+                currentYear = today.getFullYear();
+                dateInput.value = today.toISOString().split('T')[0];
+                renderCalendar();
+
+                prevMonthBtn.addEventListener('click', () => {
+                    currentMonth--;
+                    if (currentMonth < 0) {
+                        currentMonth = 11;
+                        currentYear--;
+                    }
+                    renderCalendar();
+                    updateCalendarWithTransactions();
+                });
+
+                nextMonthBtn.addEventListener('click', () => {
+                    currentMonth++;
+                    if (currentMonth > 11) {
+                        currentMonth = 0;
+                        currentYear++;
+                    }
+                    renderCalendar();
+                    updateCalendarWithTransactions();
+                });
+
+                startMusic();
+            } else {
+                console.log("User is signed out.");
+            }
         });
-        list.appendChild(li);
-      });
+    }
+
+    // Handle authentication and view switching
+    async function handleLogin() {
+        if (passwordInput.value === PASSWORD) {
+            // Only initialize Firebase after the password is correct
+            if (!initializeFirebase()) {
+                return;
+            }
+            
+            statusMessage.textContent = "Connexion à Firebase...";
+            try {
+                // Now signing in anonymously is the default and only method.
+                await signInAnonymously(auth);
+                
+                // Switch screens and start the app
+                loginScreen.classList.add('hidden');
+                budgetApp.classList.remove('hidden');
+                budgetApp.classList.add('active');
+                document.body.classList.remove('bg-blue-700');
+                document.body.classList.add('bg-purple-950');
+                statusMessage.textContent = "";
+                startApp();
+            } catch (error) {
+                console.error("Error during authentication:", error);
+                statusMessage.textContent = "Échec de la connexion. Veuillez réessayer.";
+            }
+
+        } else {
+            statusMessage.textContent = "Incantation incorrecte.";
+            setTimeout(() => statusMessage.textContent = '', 2000);
+        }
+    }
+    
+    loginBtn.addEventListener('click', handleLogin);
+    passwordInput.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            handleLogin();
+        }
     });
-  </script>
+
+    // Add a transaction to Firestore
+    async function addTransaction() {
+        if (!db) {
+            console.error("Firestore database is not initialized.");
+            statusMessage.textContent = "Erreur: La base de données n'est pas prête. Veuillez réessayer.";
+            setTimeout(() => statusMessage.textContent = '', 4000);
+            return;
+        }
+
+        const description = descriptionInput.value.trim();
+        const amount = parseFloat(amountInput.value);
+        const type = typeInput.value;
+        const category = type === 'expense' ? categoryInput.value : '';
+        const date = dateInput.value;
+
+        if (!description || isNaN(amount) || amount <= 0 || !date) {
+            statusMessage.textContent = "Veuillez entrer une description, un montant et une date valides.";
+            setTimeout(() => statusMessage.textContent = '', 2000);
+            return;
+        }
+
+        const addBtnOriginalText = addTransactionBtn.innerHTML;
+        addTransactionBtn.disabled = true;
+        addTransactionBtn.innerHTML = '<div class="spinner"></div>';
+        const collectionPath = `artifacts/${appId}/public/data/magic_budget`;
+        try {
+            await addDoc(collection(db, collectionPath), {
+                description,
+                amount,
+                type,
+                category,
+                date
+            });
+            statusMessage.textContent = "Sortilège lancé avec succès!";
+            descriptionInput.value = '';
+            amountInput.value = '';
+            categoryInput.value = 'Travel';
+            setTimeout(() => statusMessage.textContent = '', 2000);
+        } catch (error) {
+            console.error("Erreur lors de l'ajout de la transaction: ", error);
+            statusMessage.textContent = "Échec du lancement du sortilège.";
+        } finally {
+            addTransactionBtn.disabled = false;
+            addTransactionBtn.innerHTML = addBtnOriginalText;
+        }
+    }
+
+    // Function to delete a transaction
+    async function deleteTransaction(docId) {
+        statusMessage.textContent = "Annulation du sortilège...";
+        const docPath = `artifacts/${appId}/public/data/magic_budget/${docId}`;
+        try {
+            await deleteDoc(doc(db, docPath));
+            statusMessage.textContent = "Sortilège annulé avec succès!";
+        } catch (error) {
+            console.error("Erreur lors de la suppression du document: ", error);
+            statusMessage.textContent = "Échec de l'annulation du sortilège.";
+        }
+        setTimeout(() => statusMessage.textContent = '', 2000);
+    }
+
+    // Listen for real-time transactions
+    function listenForTransactions() {
+        const collectionPath = `artifacts/${appId}/public/data/magic_budget`;
+        try {
+            onSnapshot(collection(db, collectionPath), (snapshot) => {
+                let totalBalance = 0;
+                let totalIncome = 0;
+                let totalExpenses = 0;
+                let expenseCategories = {};
+                transactionDates.clear();
+                
+                transactionList.innerHTML = '';
+
+                if (snapshot.empty) {
+                    transactionList.innerHTML = '<li class="text-center text-gray-400 italic">Aucune transaction pour l\'instant.</li>';
+                } else {
+                    snapshot.forEach((doc) => {
+                        const data = doc.data();
+                        const li = document.createElement('li');
+                        li.className = 'flex justify-between items-center p-3 rounded-lg border ' + (data.type === 'income' ? 'bg-green-900 border-green-700' : 'bg-red-900 border-red-700');
+                        
+                        const dateString = data.date;
+                        const dayKey = dateString;
+                        transactionDates.add(dayKey);
+                        
+                        const emoji = categoryEmojis[data.category] || ''; // Improved emoji display
+
+                        li.innerHTML = `
+                            <div>
+                                <div class="text-xs font-semibold text-white">${emoji} ${data.category || ''}</div>
+                                <span>${data.description}</span>
+                                <div class="text-xs text-gray-400 mt-1">Date: ${dateString}</div>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="font-semibold text-lg">${data.type === 'income' ? '+' : '-'}$${data.amount.toFixed(2)}</span>
+                                <button data-id="${doc.id}" class="deleteBtn bg-gray-600 text-white p-1 rounded-full text-xs hover:bg-gray-700">X</button>
+                            </div>
+                        `;
+                        transactionList.appendChild(li);
+
+                        li.querySelector('.deleteBtn').addEventListener('click', (e) => {
+                            const docId = e.target.getAttribute('data-id');
+                            deleteTransaction(docId);
+                        });
+
+                        if (data.type === 'income') {
+                            totalIncome += data.amount;
+                        } else {
+                            totalExpenses += data.amount;
+                            if (data.category) {
+                                expenseCategories[data.category] = (expenseCategories[data.category] || 0) + data.amount;
+                            }
+                        }
+                    });
+
+                    totalBalance = totalIncome - totalExpenses;
+                }
+
+                totalBalanceEl.textContent = `$${totalBalance.toFixed(2)}`;
+                totalIncomeEl.textContent = `$${totalIncome.toFixed(2)}`;
+                totalExpensesEl.textContent = `$${totalExpenses.toFixed(2)}`;
+
+                updateCharts(totalIncome, totalExpenses, expenseCategories);
+                updateCalendarWithTransactions();
+
+            }, (error) => {
+                console.error("Error listening to transactions: ", error);
+                statusMessage.textContent = "Erreur lors de l'écoute des transactions.";
+            });
+        } catch (error) {
+            console.error("Error setting up listener: ", error);
+            statusMessage.textContent = "Erreur lors de la mise en place de l'écouteur.";
+        }
+    }
+    
+    // Calendar function
+    function renderCalendar() {
+        calendarGrid.innerHTML = '';
+        const today = new Date();
+        const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
+        const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0);
+        const startDayOfWeek = firstDayOfMonth.getDay();
+
+        const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        monthYearDisplay.textContent = `${monthNames[currentMonth]} ${currentYear}`;
+
+        for (let i = 0; i < startDayOfWeek; i++) {
+            const emptyCell = document.createElement('div');
+            calendarGrid.appendChild(emptyCell);
+        }
+
+        for (let day = 1; day <= lastDayOfMonth.getDate(); day++) {
+            const cell = document.createElement('div');
+            cell.className = 'calendar-cell bg-purple-700 text-white';
+            cell.textContent = day;
+            
+            const cellDate = new Date(currentYear, currentMonth, day);
+            const cellDateString = `${cellDate.getFullYear()}-${String(cellDate.getMonth() + 1).padStart(2, '0')}-${String(cellDate.getDate()).padStart(2, '0')}`;
+            cell.setAttribute('data-date', cellDateString);
+            
+            if (currentYear === today.getFullYear() && currentMonth === today.getMonth() && day === today.getDate()) {
+                cell.classList.add('bg-purple-500', 'font-bold');
+            }
+            
+            calendarGrid.appendChild(cell);
+        }
+    }
+    
+    function updateCalendarWithTransactions() {
+        const allCells = document.querySelectorAll('.calendar-grid .calendar-cell[data-date]');
+        allCells.forEach(cell => {
+            const date = cell.getAttribute('data-date');
+            if (transactionDates.has(date)) {
+                cell.classList.add('bg-purple-600', 'font-bold', 'border-yellow-300', 'border');
+            } else {
+                cell.classList.remove('bg-purple-600', 'font-bold', 'border-yellow-300', 'border');
+            }
+        });
+    }
+
+    // Initialize and update charts
+    function setupCharts() {
+        const balanceCtx = document.getElementById('balanceChart').getContext('2d');
+        const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+        
+        // Destroy existing chart instances to prevent the "Canvas is already in use" error
+        if (balanceChart) {
+            balanceChart.destroy();
+        }
+        if (categoryChart) {
+            categoryChart.destroy();
+        }
+
+        balanceChart = new Chart(balanceCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Income', 'Expenses'],
+                datasets: [{
+                    label: 'Total Amount',
+                    data: [0, 0],
+                    backgroundColor: ['rgba(52, 211, 153, 0.8)', 'rgba(239, 68, 68, 0.8)'],
+                    borderColor: ['rgba(52, 211, 153, 1)', 'rgba(239, 68, 68, 1)'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false,
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: 'white' },
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: { color: 'white' },
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                    }
+                }
+            }
+        });
+        
+        categoryChart = new Chart(categoryCtx, {
+            type: 'doughnut',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Expenses by Category',
+                    data: [],
+                    backgroundColor: [
+                        'rgba(255, 205, 86, 0.8)', 'rgba(54, 162, 235, 0.8)', 'rgba(255, 99, 132, 0.8)',
+                        'rgba(75, 192, 192, 0.8)', 'rgba(153, 102, 255, 0.8)', 'rgba(255, 159, 64, 0.8)'
+                    ],
+                    borderColor: 'rgba(255, 255, 255, 0.5)',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: 'white'
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Update chart data
+    function updateCharts(income, expenses, categories) {
+        if (balanceChart && categoryChart) {
+            balanceChart.data.datasets[0].data = [income, expenses];
+            balanceChart.update();
+            
+            const categoryLabels = Object.keys(categories);
+            const categoryData = Object.values(categories);
+            
+            categoryChart.data.labels = categoryLabels;
+            categoryChart.data.datasets[0].data = categoryData;
+            categoryChart.update();
+        }
+    }
+
+    // Music functions using Tone.js
+    function startMusic() {
+        if (Tone.context.state !== 'running') {
+            Tone.start();
+        }
+
+        // Crée un synthétiseur et une réverbération avec des réglages plus magiques
+        synth = new Tone.PolySynth(Tone.Synth, {
+            oscillator: { type: 'sine' }, // Forme d'onde plus douce
+            envelope: {
+                attack: 1.5,
+                decay: 0.5,
+                sustain: 0.5,
+                release: 2 // Longue libération pour une ambiance magique
+            }
+        }).toDestination();
+
+        reverb = new Tone.Reverb(4).toDestination();
+        synth.connect(reverb);
+        reverb.wet.value = 0.5; // Plus de réverbération pour une sensation onirique
+
+        // Accords et progressions variés
+        const chords = [
+            ["C4", "E4", "G4", "B4"],     // C major 7
+            ["F4", "A4", "C5", "E5"],     // F major 7
+            ["G4", "B4", "D5", "F5"],     // G7
+            ["A4", "C5", "E5"],           // A minor
+            ["D4", "F#4", "A4", "C5"],    // D7
+            ["E4", "G4", "B4", "D5"]      // E minor 7
+        ];
+
+        // Séquence aléatoire d'accords et de notes
+        musicLoop = new Tone.Loop(time => {
+            const randomChord = chords[Math.floor(Math.random() * chords.length)];
+            // Joue l'accord sur une mesure entière, ce qui ralentit considérablement la progression
+            synth.triggerAttackRelease(randomChord, '1m', time);
+        }, '1m'); // Répète toutes les mesures
+
+        Tone.Transport.start();
+        musicLoop.start(0);
+
+        musicPlaying = true;
+        musicToggleBtn.textContent = '♫ Pause Ambiance';
+    }
+
+    function toggleMusic() {
+        if (musicPlaying) {
+            musicLoop.stop();
+            musicPlaying = false;
+            musicToggleBtn.textContent = '♫ Play Ambiance';
+        } else {
+            musicLoop.start(0);
+            musicPlaying = true;
+            musicToggleBtn.textContent = '♫ Pause Ambiance';
+        }
+    }
+
+    musicToggleBtn.addEventListener('click', toggleMusic);
+</script>
+
 </body>
 </html>
