@@ -84,10 +84,10 @@
         A whisper on the aether hums a secret song, calling to those who seek order in the realm of chaos. 
         Before you lies the enchanted ledger of our very own magical economy. 
         Within its pages, every coin holds a spell, and every spell, a story. 
-        Utter the ancient incantation to unseal this grimoire and begin our journey.
+        Enter the ancient password to unseal this grimoire and begin our journey.
     </p>
     <div class="flex flex-col items-center space-y-4">
-        <input type="password" id="passwordInput" placeholder="Incantation..." class="w-full px-4 py-2 text-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <input type="password" id="passwordInput" placeholder="Enter password" class="w-full px-4 py-2 text-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
         <button id="loginBtn" class="w-full bg-blue-500 text-white font-bold py-2 rounded-lg hover:bg-blue-600 transition duration-200 ease-in-out shadow-md">Open the Grimoire</button>
     </div>
     <div id="statusMessage" class="text-sm mt-4 h-6 text-gray-300"></div>
@@ -214,7 +214,7 @@
 <!-- Firebase SDKs -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, doc, onSnapshot, collection, addDoc, serverTimestamp, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
     import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
@@ -229,6 +229,7 @@
     let musicPlaying = false;
     let synth;
     let reverb;
+    let musicLoop; // Variable pour la boucle musicale
 
     // Chart and calendar variables
     let balanceChart, categoryChart;
@@ -261,19 +262,10 @@
     // Hardcoded password
     const PASSWORD = "@Neige2025";
     
-    // START HERE: Paste your Firebase config object below.
-    const firebaseConfig = {
-        apiKey: "AIzaSyA1fLyj-6OCXb8ef1n_dv9o_QzVzBXB9Ws",
-        authDomain: "kittypizzabank.firebaseapp.com",
-        projectId: "kittypizzabank",
-        storageBucket: "kittypizzabank.firebasestorage.app",
-        messagingSenderId: "904067134114",
-        appId: "1:904067134114:web:9c5e2135527a214618ddfb",
-        measurementId: "G-DLL44SY3YK"
-    };
-    // END HERE: Firebase config.
-    
+    // Use the Firebase config from the global variable
+    const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
     const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+    const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
     // Emoji mapping for categories
     const categoryEmojis = {
@@ -290,7 +282,7 @@
         if (Object.keys(firebaseConfig).length === 0) {
             console.error("Firebase config is not available.");
             statusMessage.textContent = "Erreur: App configuration missing.";
-            return;
+            return false;
         }
 
         try {
@@ -354,9 +346,6 @@
 
     // Handle authentication and view switching
     async function handleLogin() {
-        // Debugging line to see the entered password
-        console.log("Password entered:", passwordInput.value);
-
         if (passwordInput.value === PASSWORD) {
             // Only initialize Firebase after the password is correct
             if (!initializeFirebase()) {
@@ -365,8 +354,12 @@
             
             statusMessage.textContent = "Connexion à Firebase...";
             try {
-                // Sign in anonymously to get a user ID
-                await signInAnonymously(auth);
+                // Use the provided auth token if available, otherwise sign in anonymously
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
                 
                 // Switch screens and start the app
                 loginScreen.classList.add('hidden');
@@ -377,7 +370,7 @@
                 statusMessage.textContent = "";
                 startApp();
             } catch (error) {
-                console.error("Error during anonymous sign-in:", error);
+                console.error("Error during authentication:", error);
                 statusMessage.textContent = "Échec de la connexion. Veuillez réessayer.";
             }
 
@@ -386,7 +379,7 @@
             setTimeout(() => statusMessage.textContent = '', 2000);
         }
     }
-
+    
     loginBtn.addEventListener('click', handleLogin);
     passwordInput.addEventListener('keydown', (event) => {
         if (event.key === 'Enter') {
@@ -580,6 +573,14 @@
         const balanceCtx = document.getElementById('balanceChart').getContext('2d');
         const categoryCtx = document.getElementById('categoryChart').getContext('2d');
         
+        // Destroy existing chart instances to prevent the "Canvas is already in use" error
+        if (balanceChart) {
+            balanceChart.destroy();
+        }
+        if (categoryChart) {
+            categoryChart.destroy();
+        }
+
         balanceChart = new Chart(balanceCtx, {
             type: 'bar',
             data: {
@@ -662,45 +663,52 @@
             Tone.start();
         }
 
-        // Create synth with softer tone and reverb
+        // Crée un synthétiseur et une réverbération avec des réglages plus magiques
         synth = new Tone.PolySynth(Tone.Synth, {
-            oscillator: { type: 'sine' }, // Softer waveform
+            oscillator: { type: 'sine' }, // Forme d'onde plus douce
             envelope: {
                 attack: 1.5,
                 decay: 0.5,
                 sustain: 0.5,
-                release: 2 // Longer release for a magical fade-out
+                release: 2 // Longue libération pour une ambiance magique
             }
         }).toDestination();
 
         reverb = new Tone.Reverb(4).toDestination();
         synth.connect(reverb);
-        reverb.wet.value = 0.5; // More reverb for a whimsical feel
+        reverb.wet.value = 0.5; // Plus de réverbération pour une sensation onirique
 
-        // Play a whimsical chord progression with a softer rhythm
-        const chord1 = ["C4", "E4", "G4", "B4"]; // C major 7
-        const chord2 = ["F4", "A4", "C5", "E5"]; // F major 7
+        // Accords et progressions variés
+        const chords = [
+            ["C4", "E4", "G4", "B4"],     // C major 7
+            ["F4", "A4", "C5", "E5"],     // F major 7
+            ["G4", "B4", "D5", "F5"],     // G7
+            ["A4", "C5", "E5"],           // A minor
+            ["D4", "F#4", "A4", "C5"],    // D7
+            ["E4", "G4", "B4", "D5"]      // E minor 7
+        ];
 
-        Tone.Transport.scheduleRepeat(time => {
-            synth.triggerAttackRelease(chord1, '4n', time);
-        }, '1n');
-
-        Tone.Transport.scheduleRepeat(time => {
-            synth.triggerAttackRelease(chord2, '4n', time);
-        }, '1n', '1n');
+        // Séquence aléatoire d'accords et de notes
+        musicLoop = new Tone.Loop(time => {
+            const randomChord = chords[Math.floor(Math.random() * chords.length)];
+            // Joue l'accord sur une mesure entière, ce qui ralentit considérablement la progression
+            synth.triggerAttackRelease(randomChord, '1m', time);
+        }, '1m'); // Répète toutes les mesures
 
         Tone.Transport.start();
+        musicLoop.start(0);
+
         musicPlaying = true;
         musicToggleBtn.textContent = '♫ Pause Ambiance';
     }
 
     function toggleMusic() {
         if (musicPlaying) {
-            Tone.Transport.stop();
+            musicLoop.stop();
             musicPlaying = false;
             musicToggleBtn.textContent = '♫ Play Ambiance';
         } else {
-            Tone.Transport.start();
+            musicLoop.start(0);
             musicPlaying = true;
             musicToggleBtn.textContent = '♫ Pause Ambiance';
         }
