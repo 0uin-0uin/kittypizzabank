@@ -260,19 +260,15 @@
 
     // Hardcoded password
     const PASSWORD = "@Neige2025";
-
-    // Platform environment variables
+    
+    // START HERE: Paste your Firebase config object below.
+    // Replace the empty object `{}` with the config you copied from the Firebase console.
+    const firebaseConfig = {};
+    // END HERE: Firebase config.
+    
+    // The following variables are specific to the development environment and are not needed on Netlify.
+    // They are left for reference in case you want to use them on a compatible platform.
     const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-    
-    // User's Firebase configuration
-    let firebaseConfig;
-    try {
-        firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-    } catch (e) {
-        console.error("Failed to parse firebase config:", e);
-        firebaseConfig = {};
-    }
-    
     const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
     // Emoji mapping for categories
