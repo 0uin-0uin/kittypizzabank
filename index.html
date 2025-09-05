@@ -262,20 +262,36 @@
     // Hardcoded password
     const PASSWORD = "@Neige2025";
     
-    // Use the Firebase config from the global variable
-    const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-    const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+    // Utilisez les variables de configuration globales pour la prévisualisation,
+    // mais préparez un espace pour votre configuration de déploiement.
+    // REMPLACEZ le contenu de l'objet ci-dessous par votre propre configuration Firebase.
+    const firebaseConfigForDeployment = const firebaseConfig = {
 
-    // Emoji mapping for categories
-    const categoryEmojis = {
-        'Travel': '✈️',
-        'Food': '🍔',
-        'Hobbies': '🎨',
-        'Work': '💼',
-        'Finances': '💰',
-        'Other': '✨',
-    };
+  apiKey: "AIzaSyA1fLyj-6OCXb8ef1n_dv9o_QzVzBXB9Ws",
+
+  authDomain: "kittypizzabank.firebaseapp.com",
+
+  projectId: "kittypizzabank",
+
+  storageBucket: "kittypizzabank.firebasestorage.app",
+
+  messagingSenderId: "904067134114",
+
+  appId: "1:904067134114:web:9c5e2135527a214618ddfb",
+
+  measurementId: "G-DLL44SY3YK"
+
+};
+    
+    // La variable appId est également spécifique à Gemini, vous pouvez la remplacer
+    // par le nom de votre choix si vous ne prévoyez pas de la partager.
+    const appIdFromGemini = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+    const firebaseConfig = Object.keys(firebaseConfigForDeployment).length > 0
+        ? firebaseConfigForDeployment
+        : JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+
+    const appId = appIdFromGemini;
 
     // Firebase Initialization (now separated from login)
     function initializeFirebase() {
@@ -355,8 +371,8 @@
             statusMessage.textContent = "Connexion à Firebase...";
             try {
                 // Use the provided auth token if available, otherwise sign in anonymously
-                if (initialAuthToken) {
-                    await signInWithCustomToken(auth, initialAuthToken);
+                if (typeof __initial_auth_token !== 'undefined') {
+                    await signInWithCustomToken(auth, __initial_auth_token);
                 } else {
                     await signInAnonymously(auth);
                 }
