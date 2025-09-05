@@ -8,6 +8,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Chart.js for graphs -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Tone.js for background music -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
     <!-- Font: Cormorant Garamond for whimsical readability -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -80,9 +82,9 @@
     <h1 class="text-3xl font-bold mb-2">Greetings, wanderer Matt.</h1>
     <p class="text-gray-300 mb-6 leading-relaxed">
         A whisper on the aether hums a secret song, calling to those who seek order in the realm of chaos. 
-        Before you lies the enchanted ledger of your very own magical economy. 
+        Before you lies the enchanted ledger of our very own magical economy. 
         Within its pages, every coin holds a spell, and every spell, a story. 
-        Utter the ancient incantation to unseal this grimoire and begin your journey.
+        Utter the ancient incantation to unseal this grimoire and begin our journey.
     </p>
     <div class="flex flex-col items-center space-y-4">
         <input type="password" id="passwordInput" placeholder="Incantation..." class="w-full px-4 py-2 text-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -202,6 +204,11 @@
             <li class="text-center text-gray-400 italic">No transactions yet.</li>
         </ul>
     </div>
+    
+    <!-- Bouton de contrôle de la musique -->
+    <div class="text-center mt-6">
+      <button id="musicToggleBtn" class="bg-gray-700 text-white font-bold py-2 px-4 rounded-full hover:bg-gray-800 transition duration-200 ease-in-out">♫ Play Ambiance</button>
+    </div>
 </div>
 
 <!-- Firebase SDKs -->
@@ -217,6 +224,11 @@
     let db;
     let auth;
     let userId;
+    
+    // Music variables
+    let musicPlaying = false;
+    let synth;
+    let reverb;
 
     // Chart and calendar variables
     let balanceChart, categoryChart;
@@ -244,13 +256,23 @@
     const calendarGrid = document.getElementById('calendarGrid');
     const prevMonthBtn = document.getElementById('prevMonthBtn');
     const nextMonthBtn = document.getElementById('nextMonthBtn');
+    const musicToggleBtn = document.getElementById('musicToggleBtn');
 
     // Hardcoded password
     const PASSWORD = "@Neige2025";
 
     // Platform environment variables
     const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-    const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+    
+    // User's Firebase configuration
+    let firebaseConfig;
+    try {
+        firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+    } catch (e) {
+        console.error("Failed to parse firebase config:", e);
+        firebaseConfig = {};
+    }
+    
     const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
     // Emoji mapping for categories
@@ -338,6 +360,7 @@
             document.body.classList.remove('bg-blue-700');
             document.body.classList.add('bg-purple-950');
             statusMessage.textContent = "";
+            startMusic();
         } else {
             statusMessage.textContent = "Incorrect incantation.";
             setTimeout(() => statusMessage.textContent = '', 2000);
@@ -612,6 +635,58 @@
             categoryChart.update();
         }
     }
+
+    // Music functions using Tone.js
+    function startMusic() {
+        if (Tone.context.state !== 'running') {
+            Tone.start();
+        }
+
+        // Create synth and reverb
+        synth = new Tone.PolySynth(Tone.Synth, {
+            oscillator: { type: 'sawtooth' },
+            envelope: {
+                attack: 1.5,
+                decay: 0.5,
+                sustain: 0.5,
+                release: 1
+            }
+        }).toDestination();
+
+        reverb = new Tone.Reverb(4).toDestination();
+        synth.connect(reverb);
+        reverb.wet.value = 0.3;
+
+        // Play a repeating chord progression
+        const chord1 = ["C3", "E3", "G3", "B3"];
+        const chord2 = ["A3", "C4", "E4", "G4"];
+
+        Tone.Transport.scheduleRepeat(time => {
+            synth.triggerAttackRelease(chord1, '2n', time);
+        }, '2n');
+
+        Tone.Transport.scheduleRepeat(time => {
+            synth.triggerAttackRelease(chord2, '2n', time);
+        }, '2n', '2n');
+
+        Tone.Transport.start();
+        musicPlaying = true;
+        musicToggleBtn.textContent = '♫ Pause Ambiance';
+    }
+
+    function toggleMusic() {
+        if (musicPlaying) {
+            Tone.Transport.stop();
+            musicPlaying = false;
+            musicToggleBtn.textContent = '♫ Play Ambiance';
+        } else {
+            Tone.Transport.start();
+            musicPlaying = true;
+            musicToggleBtn.textContent = '♫ Pause Ambiance';
+        }
+    }
+
+    musicToggleBtn.addEventListener('click', toggleMusic);
     
     // Start the app on window load
     window.onload = initializeFirebase;
