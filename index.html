@@ -1,150 +1,83 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>✨ Magic Budget Grimoire</title>
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- Tone.js for ambience -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
-  <!-- Font -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;700&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <title>Magic Budget ✨</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body{font-family:'Cormorant Garamond',serif;background:#0b0b2e;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem}
-    .container{max-width:32rem;width:100%}
-    .calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:.25rem}
-    .calendar-cell{padding:.5rem 0;text-align:center;font-size:.875rem;border-radius:.5rem;transition:background-color .2s ease}
-    .login-box{background:#1a203f;border:2px solid #3b82f6;box-shadow:0 4px 6px rgb(0 0 0 / .3),0 1px 3px rgb(0 0 0 / .2)}
-    .fade-in-pulse{animation:fadeInPulse 1.6s ease-out forwards}
-    @keyframes fadeInPulse{0%{opacity:0;transform:scale(.92)}50%{opacity:1;transform:scale(1.03)}100%{opacity:1;transform:scale(1)}}
-    .spinner{border:4px solid rgba(255,255,255,.3);border-radius:50%;border-top-color:#fff;height:1.5rem;width:1.5rem;animation:spin 1s linear infinite}
-    @keyframes spin{to{transform:rotate(360deg)}}
+    body {
+      font-family: system-ui, sans-serif;
+      background: #f4f4f8;
+      margin: 0;
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    h1 {
+      color: #4a148c;
+      margin-bottom: 1rem;
+    }
+    form {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    input, button {
+      padding: 0.5rem;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+    }
+    button {
+      background: #4a148c;
+      color: white;
+      cursor: pointer;
+      border: none;
+    }
+    button:hover {
+      background: #6a1b9a;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+      width: 100%;
+      max-width: 400px;
+    }
+    li {
+      background: white;
+      margin: 0.5rem 0;
+      padding: 0.75rem;
+      border-radius: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .delete {
+      background: none;
+      border: none;
+      color: #d32f2f;
+      font-weight: bold;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
-  <!-- LOGIN -->
-  <section id="loginScreen" class="container login-box text-white p-8 rounded-xl text-center">
-    <div class="text-6xl mb-4 fade-in-pulse">🧙‍♂️</div>
-    <h1 class="text-3xl font-bold mb-2">Greetings, wanderer.</h1>
-    <p class="text-gray-300 mb-6 leading-relaxed">A whisper on the aether hums a secret song, calling to those who seek order in the realm of chaos. Before you lies the enchanted ledger of our very own magical economy. Within its pages, every coin holds a spell, and every spell, a story. Enter the ancient password to unseal this grimoire and begin our journey.</p>
-    <div class="flex flex-col items-center gap-3">
-      <input type="password" id="passwordInput" placeholder="Enter password" class="w-full px-4 py-2 text-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-      <button id="loginBtn" class="w-full bg-blue-500 text-white font-bold py-2 rounded-lg hover:bg-blue-600 transition">Open the Grimoire</button>
-    </div>
-    <div id="statusMessage" class="text-sm mt-4 h-6 text-gray-300"></div>
-  </section>
+  <h1>✨ Magic Budget ✨</h1>
+  <form id="transaction-form">
+    <input type="text" id="desc" placeholder="Description" required>
+    <input type="number" id="amount" placeholder="Montant (€)" required>
+    <button type="submit">Ajouter</button>
+  </form>
+  <ul id="transactions"></ul>
 
-  <!-- APP -->
-  <main id="budgetApp" class="container bg-purple-900 text-white p-8 rounded-xl shadow-lg border-2 border-purple-600 hidden">
-    <h1 class="text-3xl font-bold text-center mb-2">🔮 Magic Budget Grimoire</h1>
-    <p class="text-gray-300 text-center mb-6">Track your magical expenditures and spellbound savings.</p>
-
-    <div class="mb-6 bg-purple-800 p-4 rounded-lg shadow-inner text-sm text-center">
-      <span class="font-bold text-gray-400">Your Magical ID:</span>
-      <span id="userIdDisplay" class="font-mono text-yellow-300 break-all"></span>
-    </div>
-
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 text-center">
-      <div class="bg-purple-800 p-4 rounded-lg shadow-inner"><h3 class="text-sm font-bold text-gray-400">Total Balance</h3><p id="totalBalance" class="text-2xl font-bold text-yellow-300 mt-1">$0.00</p></div>
-      <div class="bg-purple-800 p-4 rounded-lg shadow-inner"><h3 class="text-sm font-bold text-gray-400">Total Income</h3><p id="totalIncome" class="text-2xl font-bold text-green-300 mt-1">$0.00</p></div>
-      <div class="bg-purple-800 p-4 rounded-lg shadow-inner"><h3 class="text-sm font-bold text-gray-400">Total Expenses</h3><p id="totalExpenses" class="text-2xl font-bold text-red-300 mt-1">$0.00</p></div>
-    </div>
-
-    <!-- Add transaction -->
-    <section class="mb-6">
-      <h3 class="text-xl font-bold mb-3">Add a Transaction</h3>
-      <div class="space-y-4">
-        <div>
-          <label for="descriptionInput" class="block text-sm font-medium text-gray-300 mb-1">Description</label>
-          <input id="descriptionInput" type="text" class="w-full px-4 py-2 text-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" />
-        </div>
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label for="amountInput" class="block text-sm font-medium text-gray-300 mb-1">Amount ($)</label>
-            <input id="amountInput" type="number" class="w-full px-4 py-2 text-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" />
-          </div>
-          <div>
-            <label for="typeInput" class="block text-sm font-medium text-gray-300 mb-1">Type</label>
-            <select id="typeInput" class="w-full px-4 py-2 text-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
-              <option value="expense">Expense</option>
-              <option value="income">Income</option>
-            </select>
-          </div>
-        </div>
-        <div>
-          <label for="dateInput" class="block text-sm font-medium text-gray-300 mb-1">Date</label>
-          <input id="dateInput" type="date" class="w-full px-4 py-2 text-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" />
-        </div>
-        <div id="categoryContainer">
-          <label for="categoryInput" class="block text-sm font-medium text-gray-300 mb-1">Category</label>
-          <select id="categoryInput" class="w-full px-4 py-2 text-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
-            <option>Travel</option>
-            <option>Food</option>
-            <option>Hobbies</option>
-            <option>Work</option>
-            <option>Finances</option>
-            <option>Other</option>
-          </select>
-        </div>
-        <button id="addTransactionBtn" class="w-full bg-purple-500 text-white font-bold py-2 rounded-lg hover:bg-purple-600 transition">Cast Spell</button>
-      </div>
-    </section>
-
-    <!-- Calendar -->
-    <section class="mb-6 bg-purple-800 p-4 rounded-lg border border-purple-700">
-      <h3 class="text-xl font-bold mb-3 text-center">Magical Calendar</h3>
-      <div class="flex justify-between items-center mb-4">
-        <button id="prevMonthBtn" class="text-gray-300 hover:text-white">&lt;</button>
-        <span id="monthYearDisplay" class="text-lg font-bold"></span>
-        <button id="nextMonthBtn" class="text-gray-300 hover:text-white">&gt;</button>
-      </div>
-      <div class="calendar-grid text-gray-300">
-        <div class="font-bold">Sun</div><div class="font-bold">Mon</div><div class="font-bold">Tue</div><div class="font-bold">Wed</div><div class="font-bold">Thu</div><div class="font-bold">Fri</div><div class="font-bold">Sat</div>
-      </div>
-      <div id="calendarGrid" class="calendar-grid mt-2"></div>
-    </section>
-
-    <!-- Charts -->
-    <section class="mb-6 bg-purple-800 p-4 rounded-lg border border-purple-700">
-      <h3 class="text-xl font-bold mb-3 text-center">Budget Visuals</h3>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div class="bg-purple-900 p-3 rounded-lg">
-          <h4 class="text-sm font-bold text-gray-300 mb-2">Income vs Expenses</h4>
-          <canvas id="balanceChart"></canvas>
-        </div>
-        <div class="bg-purple-900 p-3 rounded-lg">
-          <h4 class="text-sm font-bold text-gray-300 mb-2">Expenses by Category</h4>
-          <canvas id="categoryChart"></canvas>
-        </div>
-      </div>
-    </section>
-
-    <!-- Transactions -->
-    <section>
-      <h3 class="text-xl font-bold mb-3">Transaction History</h3>
-      <ul id="transactionList" class="space-y-3 bg-purple-800 p-4 rounded-lg border border-purple-700">
-        <li class="text-center text-gray-400 italic">No transactions yet.</li>
-      </ul>
-    </section>
-
-    <div class="text-center mt-6">
-      <button id="musicToggleBtn" class="bg-gray-700 text-white font-bold py-2 px-4 rounded-full hover:bg-gray-800 transition">♫ Play Ambiance</button>
-    </div>
-  </main>
-
-  <!-- Firebase (modular v11) -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    // --- 🔧 REQUIRED: Put your own Firebase project config here ---
-    // How to get it: Firebase console → Project settings → Your apps → SDK setup & config → "Config"
+    // ⚡️ Ta config Firebase (à remplacer par la tienne depuis Firebase Console)
     const firebaseConfig = {
   apiKey: "AIzaSyA1fLyj-6OCXb8ef1n_dv9o_QzVzBXB9Ws",
   authDomain: "kittypizzabank.firebaseapp.com",
@@ -155,187 +88,50 @@
   measurementId: "G-DLL44SY3YK"
 };
 
-    // --- App password (client-side gate; not a real auth wall) ---
-    const PASSWORD = "@Neige2025"; // change if you want
+    // 🚀 Initialiser Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
 
-    // UI refs
-    const el = (id)=>document.getElementById(id);
-    const loginScreen = el('loginScreen');
-    const budgetApp = el('budgetApp');
-    const passwordInput = el('passwordInput');
-    const loginBtn = el('loginBtn');
-    const statusMessage = el('statusMessage');
-    const userIdDisplay = el('userIdDisplay');
-    const descriptionInput = el('descriptionInput');
-    const amountInput = el('amountInput');
-    const typeInput = el('typeInput');
-    const categoryInput = el('categoryInput');
-    const dateInput = el('dateInput');
-    const addTransactionBtn = el('addTransactionBtn');
-    const totalBalanceEl = el('totalBalance');
-    const totalIncomeEl = el('totalIncome');
-    const totalExpensesEl = el('totalExpenses');
-    const transactionList = el('transactionList');
-    const monthYearDisplay = el('monthYearDisplay');
-    const calendarGrid = el('calendarGrid');
-    const prevMonthBtn = el('prevMonthBtn');
-    const nextMonthBtn = el('nextMonthBtn');
-    const musicToggleBtn = el('musicToggleBtn');
+    // 👤 Connexion anonyme
+    signInAnonymously(auth)
+      .then(() => console.log("✅ Connecté en anonyme"))
+      .catch((err) => console.error("❌ Erreur auth anonyme :", err));
 
-    let app, db, auth, uid;
-    let balanceChart, categoryChart;
-    let currentMonth, currentYear;
-    const transactionDates = new Set();
+    // Référence à ta collection Firestore
+    const transactionsRef = collection(db, "artifacts/demoApp/public/data/magic_budget");
 
-    function initCharts(){
-      const balanceCtx = document.getElementById('balanceChart').getContext('2d');
-      const categoryCtx = document.getElementById('categoryChart').getContext('2d');
-      if(balanceChart) balanceChart.destroy();
-      if(categoryChart) categoryChart.destroy();
-      balanceChart = new Chart(balanceCtx,{type:'bar',data:{labels:['Income','Expenses'],datasets:[{label:'Total Amount',data:[0,0],backgroundColor:['rgba(52,211,153,.8)','rgba(239,68,68,.8)'],borderColor:['rgba(52,211,153,1)','rgba(239,68,68,1)'],borderWidth:1}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#fff'},grid:{color:'rgba(255,255,255,.1)'}},y:{beginAtZero:true,ticks:{color:'#fff'},grid:{color:'rgba(255,255,255,.1)'}}}}});
-      categoryChart = new Chart(categoryCtx,{type:'doughnut',data:{labels:[],datasets:[{label:'Expenses by Category',data:[],backgroundColor:['rgba(255,205,86,.8)','rgba(54,162,235,.8)','rgba(255,99,132,.8)','rgba(75,192,192,.8)','rgba(153,102,255,.8)','rgba(255,159,64,.8)'],borderColor:'rgba(255,255,255,.5)',borderWidth:2}]},options:{responsive:true,plugins:{legend:{labels:{color:'#fff'}}}}});
-    }
-
-    function updateCharts(income,expenses,categories){
-      if(!balanceChart||!categoryChart) return;
-      balanceChart.data.datasets[0].data = [income,expenses];
-      balanceChart.update();
-      const labels = Object.keys(categories);
-      const values = Object.values(categories);
-      categoryChart.data.labels = labels;
-      categoryChart.data.datasets[0].data = values;
-      categoryChart.update();
-    }
-
-    function renderCalendar(){
-      calendarGrid.innerHTML = '';
-      const today = new Date();
-      const firstDay = new Date(currentYear,currentMonth,1);
-      const lastDay = new Date(currentYear,currentMonth+1,0);
-      const startDow = firstDay.getDay();
-      const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-      monthYearDisplay.textContent = `${months[currentMonth]} ${currentYear}`;
-      for(let i=0;i<startDow;i++){ calendarGrid.appendChild(document.createElement('div')); }
-      for(let d=1; d<=lastDay.getDate(); d++){
-        const cell = document.createElement('div');
-        cell.className = 'calendar-cell bg-purple-700 text-white';
-        cell.textContent = d;
-        const cellDate = new Date(currentYear,currentMonth,d);
-        const iso = `${cellDate.getFullYear()}-${String(cellDate.getMonth()+1).padStart(2,'0')}-${String(cellDate.getDate()).padStart(2,'0')}`;
-        cell.dataset.date = iso;
-        if(cellDate.toDateString()===today.toDateString()) cell.classList.add('bg-purple-500','font-bold');
-        calendarGrid.appendChild(cell);
+    // 🎯 Gestion du formulaire
+    const form = document.getElementById("transaction-form");
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const desc = document.getElementById("desc").value;
+      const amount = parseFloat(document.getElementById("amount").value);
+      try {
+        await addDoc(transactionsRef, { desc, amount, created: Date.now() });
+        form.reset();
+      } catch (err) {
+        console.error("Erreur ajout transaction :", err);
       }
-    }
+    });
 
-    function refreshCalendarMarkers(){
-      document.querySelectorAll('.calendar-grid .calendar-cell[data-date]').forEach(cell =>{
-        const date = cell.dataset.date;
-        if(transactionDates.has(date)){
-          cell.classList.add('bg-purple-600','font-bold','border','border-yellow-300');
-        }else{
-          cell.classList.remove('bg-purple-600','font-bold','border','border-yellow-300');
-        }
-      });
-    }
-
-    async function addTransaction(){
-      const description = descriptionInput.value.trim();
-      const amount = parseFloat(amountInput.value);
-      const type = typeInput.value;
-      const category = type==='expense'? (categoryInput.value||'Other') : '';
-      const date = dateInput.value;
-      if(!description || isNaN(amount) || amount<=0 || !date){
-        statusMessage.textContent = 'Veuillez entrer une description, un montant et une date valides.';
-        setTimeout(()=>statusMessage.textContent='',2200); return;
-      }
-      const original = addTransactionBtn.innerHTML; addTransactionBtn.disabled=true; addTransactionBtn.innerHTML = '<div class="spinner"></div>';
-      try{
-        await addDoc(collection(db, `users/${uid}/transactions`), { description, amount, type, category, date, createdAt: new Date().toISOString() });
-        descriptionInput.value=''; amountInput.value=''; categoryInput.value='Travel';
-        statusMessage.textContent = 'Sortilège lancé avec succès!';
-      }catch(err){ console.error(err); statusMessage.textContent = "Échec du lancement du sortilège."; }
-      finally{ addTransactionBtn.disabled=false; addTransactionBtn.innerHTML=original; setTimeout(()=>statusMessage.textContent='',2000); }
-    }
-
-    async function deleteTransaction(docId){
-      statusMessage.textContent = 'Annulation du sortilège...';
-      try{ await deleteDoc(doc(db, `users/${uid}/transactions/${docId}`)); statusMessage.textContent='Sortilège annulé avec succès!'; }
-      catch(e){ console.error(e); statusMessage.textContent = "Échec de l'annulation du sortilège."; }
-      setTimeout(()=>statusMessage.textContent='',1800);
-    }
-
-    function listenTransactions(){
-      onSnapshot(collection(db, `users/${uid}/transactions`), (snap)=>{
-        let totalIncome=0, totalExpenses=0; const byCat={}; transactionDates.clear();
-        transactionList.innerHTML='';
-        if(snap.empty){ transactionList.innerHTML = '<li class="text-center text-gray-400 italic">Aucune transaction pour l\'instant.</li>'; }
-        snap.forEach(docSnap=>{
-          const data = docSnap.data();
-          const li = document.createElement('li');
-          li.className = `flex justify-between items-center p-3 rounded-lg border ${data.type==='income'?'bg-green-900 border-green-700':'bg-red-900 border-red-700'}`;
-          const dateStr = data.date;
-          transactionDates.add(dateStr);
-          li.innerHTML = `
-            <div>
-              <div class="text-xs font-semibold text-white">${data.category||''}</div>
-              <span>${data.description||''}</span>
-              <div class="text-xs text-gray-300 mt-1">Date: ${dateStr||''}</div>
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="font-semibold text-lg">${data.type==='income'?'+':'-'}$${Number(data.amount||0).toFixed(2)}</span>
-              <button data-id="${docSnap.id}" class="deleteBtn bg-gray-600 text-white p-1 rounded-full text-xs hover:bg-gray-700">X</button>
-            </div>`;
-          transactionList.appendChild(li);
-          li.querySelector('.deleteBtn').addEventListener('click', (e)=> deleteTransaction(e.currentTarget.getAttribute('data-id')));
-          if(data.type==='income'){ totalIncome += Number(data.amount||0); }
-          else{ totalExpenses += Number(data.amount||0); if(data.category){ byCat[data.category]=(byCat[data.category]||0)+Number(data.amount||0);} }
+    // 📡 Affichage en live des transactions
+    const list = document.getElementById("transactions");
+    onSnapshot(transactionsRef, (snapshot) => {
+      list.innerHTML = "";
+      snapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        const li = document.createElement("li");
+        li.innerHTML = `
+          <span>${data.desc} — ${data.amount} €</span>
+          <button class="delete">✕</button>
+        `;
+        li.querySelector(".delete").addEventListener("click", () => {
+          deleteDoc(doc(db, "artifacts/demoApp/public/data/magic_budget", docSnap.id));
         });
-        totalIncomeEl.textContent = `$${totalIncome.toFixed(2)}`;
-        totalExpensesEl.textContent = `$${totalExpenses.toFixed(2)}`;
-        totalBalanceEl.textContent = `$${(totalIncome-totalExpenses).toFixed(2)}`;
-        updateCharts(totalIncome,totalExpenses,byCat);
-        refreshCalendarMarkers();
-      },(err)=>{ console.error('onSnapshot error',err); statusMessage.textContent = "Erreur lors de l'écoute des transactions."; });
-    }
-
-    function startMusic(){
-      if(Tone.context.state!=="running"){ Tone.start(); }
-      const synth = new Tone.PolySynth(Tone.Synth,{oscillator:{type:'sine'},envelope:{attack:1.2,decay:.5,sustain:.5,release:2}});
-      const reverb = new Tone.Reverb(4).toDestination(); synth.connect(reverb); reverb.wet.value=.5;
-      const chords = [["C4","E4","G4","B4"],["F4","A4","C5","E5"],["G4","B4","D5","F5"],["A4","C5","E5"],["D4","F#4","A4","C5"],["E4","G4","B4","D5"]];
-      const loop = new Tone.Loop(time=>{ const chord = chords[Math.floor(Math.random()*chords.length)]; synth.triggerAttackRelease(chord,'1m',time); },'1m');
-      Tone.Transport.start(); loop.start(0);
-      let playing = true;
-      musicToggleBtn.textContent = '♫ Pause Ambiance';
-      musicToggleBtn.onclick = ()=>{ playing = !playing; if(playing){ loop.start(0); musicToggleBtn.textContent='♫ Pause Ambiance'; } else { loop.stop(); musicToggleBtn.textContent='♫ Play Ambiance'; } };
-    }
-
-    function setToday(){ const today = new Date(); currentMonth=today.getMonth(); currentYear=today.getFullYear(); dateInput.value = today.toISOString().split('T')[0]; renderCalendar(); }
-
-    async function startApp(){
-      userIdDisplay.textContent = uid; initCharts(); setToday();
-      prevMonthBtn.onclick = ()=>{ currentMonth--; if(currentMonth<0){ currentMonth=11; currentYear--; } renderCalendar(); refreshCalendarMarkers(); };
-      nextMonthBtn.onclick = ()=>{ currentMonth++; if(currentMonth>11){ currentMonth=0; currentYear++; } renderCalendar(); refreshCalendarMarkers(); };
-      addTransactionBtn.onclick = addTransaction; listenTransactions(); startMusic();
-    }
-
-    function tryInitFirebase(){
-      try{ app = initializeApp(firebaseConfig); db = getFirestore(app); auth = getAuth(app); return true; }
-      catch(e){ console.error('Firebase init error', e); statusMessage.textContent = "Erreur d'initialisation de l'application."; return false; }
-    }
-
-    async function handleLogin(){
-      if(passwordInput.value!==PASSWORD){ statusMessage.textContent='Incantation incorrecte.'; setTimeout(()=>statusMessage.textContent='',1800); return; }
-      statusMessage.textContent = 'Connexion à Firebase…';
-      if(!tryInitFirebase()) return;
-      try{ const cred = await signInAnonymously(auth); uid = cred.user.uid; }
-      catch(e){ console.error('Auth error',e); statusMessage.textContent='Échec de la connexion. Vérifiez que l\'auth anonyme est activée.'; return; }
-      loginScreen.classList.add('hidden'); budgetApp.classList.remove('hidden'); statusMessage.textContent=''; startApp();
-    }
-
-    loginBtn.addEventListener('click', handleLogin);
-    passwordInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter') handleLogin(); });
+        list.appendChild(li);
+      });
+    });
   </script>
 </body>
 </html>
