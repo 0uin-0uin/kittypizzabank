@@ -642,32 +642,32 @@
             Tone.start();
         }
 
-        // Create synth and reverb
+        // Create synth with softer tone and reverb
         synth = new Tone.PolySynth(Tone.Synth, {
-            oscillator: { type: 'sawtooth' },
+            oscillator: { type: 'sine' }, // Softer waveform
             envelope: {
                 attack: 1.5,
                 decay: 0.5,
                 sustain: 0.5,
-                release: 1
+                release: 2 // Longer release for a magical fade-out
             }
         }).toDestination();
 
         reverb = new Tone.Reverb(4).toDestination();
         synth.connect(reverb);
-        reverb.wet.value = 0.3;
+        reverb.wet.value = 0.5; // More reverb for a whimsical feel
 
-        // Play a repeating chord progression
-        const chord1 = ["C3", "E3", "G3", "B3"];
-        const chord2 = ["A3", "C4", "E4", "G4"];
-
-        Tone.Transport.scheduleRepeat(time => {
-            synth.triggerAttackRelease(chord1, '2n', time);
-        }, '2n');
+        // Play a whimsical chord progression with a softer rhythm
+        const chord1 = ["C4", "E4", "G4", "B4"]; // C major 7
+        const chord2 = ["F4", "A4", "C5", "E5"]; // F major 7
 
         Tone.Transport.scheduleRepeat(time => {
-            synth.triggerAttackRelease(chord2, '2n', time);
-        }, '2n', '2n');
+            synth.triggerAttackRelease(chord1, '4n', time);
+        }, '1n');
+
+        Tone.Transport.scheduleRepeat(time => {
+            synth.triggerAttackRelease(chord2, '4n', time);
+        }, '1n', '1n');
 
         Tone.Transport.start();
         musicPlaying = true;
