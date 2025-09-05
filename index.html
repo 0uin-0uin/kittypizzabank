@@ -214,7 +214,7 @@
 <!-- Firebase SDKs -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, doc, onSnapshot, collection, addDoc, serverTimestamp, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
     import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
@@ -262,30 +262,18 @@
     const PASSWORD = "@Neige2025";
     
     // START HERE: Paste your Firebase config object below.
-    // Replace the empty object `{}` with the config you copied from the Firebase console.
     const firebaseConfig = {
-
-  apiKey: "AIzaSyA1fLyj-6OCXb8ef1n_dv9o_QzVzBXB9Ws",
-
-  authDomain: "kittypizzabank.firebaseapp.com",
-
-  projectId: "kittypizzabank",
-
-  storageBucket: "kittypizzabank.firebasestorage.app",
-
-  messagingSenderId: "904067134114",
-
-  appId: "1:904067134114:web:9c5e2135527a214618ddfb",
-
-  measurementId: "G-DLL44SY3YK"
-
-};;
+        apiKey: "AIzaSyA1fLyj-6OCXb8ef1n_dv9o_QzVzBXB9Ws",
+        authDomain: "kittypizzabank.firebaseapp.com",
+        projectId: "kittypizzabank",
+        storageBucket: "kittypizzabank.firebasestorage.app",
+        messagingSenderId: "904067134114",
+        appId: "1:904067134114:web:9c5e2135527a214618ddfb",
+        measurementId: "G-DLL44SY3YK"
+    };
     // END HERE: Firebase config.
     
-    // The following variables are specific to the development environment and are not needed on Netlify.
-    // They are left for reference in case you want to use them on a compatible platform.
     const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-    const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
     // Emoji mapping for categories
     const categoryEmojis = {
@@ -293,11 +281,11 @@
         'Food': '🍔',
         'Hobbies': '🎨',
         'Work': '💼',
-        'Finances': '💰', // New category added
+        'Finances': '💰',
         'Other': '✨',
     };
 
-    // Firebase Initialization and Authentication
+    // Firebase Initialization (now separated from login)
     function initializeFirebase() {
         if (Object.keys(firebaseConfig).length === 0) {
             console.error("Firebase config is not available.");
@@ -306,75 +294,92 @@
         }
 
         try {
-            statusMessage.textContent = "Connexion à Firebase...";
             const app = initializeApp(firebaseConfig);
             db = getFirestore(app);
             auth = getAuth(app);
-            
-            onAuthStateChanged(auth, async (user) => {
-                if (user) {
-                    userId = user.uid;
-                    userIdDisplay.textContent = userId;
-                    console.log("User authenticated with UID:", userId);
-                    statusMessage.textContent = "Connecté!";
-                    
-                    addTransactionBtn.addEventListener('click', addTransaction);
-                    listenForTransactions();
-                    setupCharts();
-                    
-                    const today = new Date();
-                    currentMonth = today.getMonth();
-                    currentYear = today.getFullYear();
-                    dateInput.value = today.toISOString().split('T')[0];
-                    renderCalendar();
-
-                    prevMonthBtn.addEventListener('click', () => {
-                        currentMonth--;
-                        if (currentMonth < 0) {
-                            currentMonth = 11;
-                            currentYear--;
-                        }
-                        renderCalendar();
-                        updateCalendarWithTransactions();
-                    });
-
-                    nextMonthBtn.addEventListener('click', () => {
-                        currentMonth++;
-                        if (currentMonth > 11) {
-                            currentMonth = 0;
-                            currentYear++;
-                        }
-                        renderCalendar();
-                        updateCalendarWithTransactions();
-                    });
-                } else {
-                    console.log("No user signed in. Attempting to sign in.");
-                    if (initialAuthToken) {
-                        await signInWithCustomToken(auth, initialAuthToken);
-                    } else {
-                        await signInAnonymously(auth);
-                    }
-                }
-            });
-
+            return true;
         } catch (error) {
             console.error("Error initializing Firebase:", error);
             statusMessage.textContent = "Erreur d'initialisation de l'application.";
+            return false;
         }
     }
 
+    // Function to set up UI and listeners after successful login
+    function startApp() {
+        if (!db || !auth) {
+            console.error("Firebase services are not ready.");
+            statusMessage.textContent = "Erreur: La base de données n'est pas prête. Veuillez réessayer.";
+            return;
+        }
+        
+        // This is where all the UI and database interaction code lives
+        userId = auth.currentUser.uid;
+        userIdDisplay.textContent = userId;
+        console.log("User authenticated with UID:", userId);
+        statusMessage.textContent = "Connecté!";
+        
+        addTransactionBtn.addEventListener('click', addTransaction);
+        listenForTransactions();
+        setupCharts();
+        
+        const today = new Date();
+        currentMonth = today.getMonth();
+        currentYear = today.getFullYear();
+        dateInput.value = today.toISOString().split('T')[0];
+        renderCalendar();
+
+        prevMonthBtn.addEventListener('click', () => {
+            currentMonth--;
+            if (currentMonth < 0) {
+                currentMonth = 11;
+                currentYear--;
+            }
+            renderCalendar();
+            updateCalendarWithTransactions();
+        });
+
+        nextMonthBtn.addEventListener('click', () => {
+            currentMonth++;
+            if (currentMonth > 11) {
+                currentMonth = 0;
+                currentYear++;
+            }
+            renderCalendar();
+            updateCalendarWithTransactions();
+        });
+
+        startMusic();
+    }
+
     // Handle authentication and view switching
-    function handleLogin() {
+    async function handleLogin() {
         if (passwordInput.value === PASSWORD) {
-            loginScreen.classList.add('hidden');
-            budgetApp.classList.remove('hidden');
-            budgetApp.classList.add('active');
-            document.body.classList.remove('bg-blue-700');
-            document.body.classList.add('bg-purple-950');
-            statusMessage.textContent = "";
-            startMusic();
+            // Only initialize Firebase after the password is correct
+            if (!initializeFirebase()) {
+                return;
+            }
+            
+            statusMessage.textContent = "Connexion à Firebase...";
+            try {
+                // Sign in anonymously to get a user ID
+                await signInAnonymously(auth);
+                
+                // Switch screens and start the app
+                loginScreen.classList.add('hidden');
+                budgetApp.classList.remove('hidden');
+                budgetApp.classList.add('active');
+                document.body.classList.remove('bg-blue-700');
+                document.body.classList.add('bg-purple-950');
+                statusMessage.textContent = "";
+                startApp();
+            } catch (error) {
+                console.error("Error during anonymous sign-in:", error);
+                statusMessage.textContent = "Échec de la connexion. Veuillez réessayer.";
+            }
+
         } else {
-            statusMessage.textContent = "Incorrect incantation.";
+            statusMessage.textContent = "Incantation incorrecte.";
             setTimeout(() => statusMessage.textContent = '', 2000);
         }
     }
@@ -699,9 +704,6 @@
     }
 
     musicToggleBtn.addEventListener('click', toggleMusic);
-    
-    // Start the app on window load
-    window.onload = initializeFirebase;
 </script>
 
 </body>
