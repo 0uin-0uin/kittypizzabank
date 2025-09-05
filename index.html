@@ -96,6 +96,12 @@
     <h1 class="text-3xl font-bold text-center mb-2">✨ Magic Budget Grimoire 🔮 📖</h1>
     <p class="text-gray-300 text-center mb-6">Track your magical expenditures and spellbound savings.</p>
 
+    <!-- Affichage de l'ID utilisateur pour le partage -->
+    <div class="mb-6 bg-purple-800 p-4 rounded-lg shadow-inner text-sm text-center">
+        <span class="font-bold text-gray-400">Votre ID Magique:</span>
+        <span id="userIdDisplay" class="font-mono text-yellow-300 break-all"></span>
+    </div>
+
     <!-- Sommaire du solde -->
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 text-center">
         <div class="bg-purple-800 p-4 rounded-lg shadow-inner">
@@ -203,6 +209,9 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, doc, onSnapshot, collection, addDoc, serverTimestamp, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    setLogLevel('debug');
 
     // Global Firebase variables
     let db;
@@ -220,6 +229,7 @@
     const passwordInput = document.getElementById('passwordInput');
     const loginBtn = document.getElementById('loginBtn');
     const statusMessage = document.getElementById('statusMessage');
+    const userIdDisplay = document.getElementById('userIdDisplay');
     const descriptionInput = document.getElementById('descriptionInput');
     const amountInput = document.getElementById('amountInput');
     const typeInput = document.getElementById('typeInput');
@@ -257,20 +267,23 @@
     function initializeFirebase() {
         if (Object.keys(firebaseConfig).length === 0) {
             console.error("Firebase config is not available.");
-            statusMessage.textContent = "Error: App configuration missing.";
+            statusMessage.textContent = "Erreur: App configuration missing.";
             return;
         }
 
         try {
+            statusMessage.textContent = "Connexion à Firebase...";
             const app = initializeApp(firebaseConfig);
             db = getFirestore(app);
             auth = getAuth(app);
-            console.log("Firebase initialized successfully.");
-
+            
             onAuthStateChanged(auth, async (user) => {
                 if (user) {
                     userId = user.uid;
+                    userIdDisplay.textContent = userId;
                     console.log("User authenticated with UID:", userId);
+                    statusMessage.textContent = "Connecté!";
+                    
                     addTransactionBtn.addEventListener('click', addTransaction);
                     listenForTransactions();
                     setupCharts();
@@ -312,7 +325,7 @@
 
         } catch (error) {
             console.error("Error initializing Firebase:", error);
-            statusMessage.textContent = "Error initializing the app.";
+            statusMessage.textContent = "Erreur d'initialisation de l'application.";
         }
     }
 
@@ -466,9 +479,11 @@
 
             }, (error) => {
                 console.error("Error listening to transactions: ", error);
+                statusMessage.textContent = "Erreur lors de l'écoute des transactions.";
             });
         } catch (error) {
             console.error("Error setting up listener: ", error);
+            statusMessage.textContent = "Erreur lors de la mise en place de l'écouteur.";
         }
     }
     
